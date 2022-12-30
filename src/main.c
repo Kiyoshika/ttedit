@@ -79,7 +79,7 @@ int main()
 				else
 				{
 					edit_write_key(&screen, &cursor, key_pressed);
-					refresh();
+					screen_draw(&screen, &cursor);
 				}
 				break;
 
@@ -89,6 +89,7 @@ int main()
 				{
 					mode = VISUAL;
 					draw_bottom(mode, &screen, &window, &cursor);
+					screen_draw(&screen, &cursor);
 				}
 				break;
 			// DUMP OUT CURRENT SCREEN BUFFER FOR DEBUGGING
@@ -108,7 +109,7 @@ int main()
 				if (mode == EDIT)
 				{
 					edit_write_key(&screen, &cursor, key_pressed);
-					refresh();
+					screen_draw(&screen, &cursor);
 				}
 
 				break;

@@ -7,11 +7,12 @@ static void _scroll_window_up(
 		struct cursor_t* const cursor)
 {
 	if (screen->start_idx > 0)
-	{
 		screen->start_idx--;
+
+	if (screen->end_idx > 0)
 		screen->end_idx--;
-		screen_draw(screen, cursor);
-	}
+
+	screen_draw(screen, cursor);
 }
 
 static void _scroll_window_down(
@@ -67,16 +68,18 @@ void edit_write_key(
 		// if current line buffer is empty, wrap up to previous row
 		if (strlen(buffer) == 0)
 		{
+			if (screen->current_line == 0)
+				_scroll_window_up(screen, cursor);
+
 			if (cursor->row > 0)
 				cursor->row--;
+
 			if (screen->current_line > 0)
 				screen->current_line--;
+
 			cursor->column = strlen(screen->lines[cursor->row]);
 			move(screen->current_line, cursor->column);
 			refresh();
-
-			if (screen->current_line == 0)
-				_scroll_window_up(screen, cursor);
 
 			return;
 		}
