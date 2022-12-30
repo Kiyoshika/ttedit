@@ -1,6 +1,12 @@
 #include <ncurses.h>
 #include "window.h"
 #include "cursor.h"
+#include "screen_buffer.h"
+#include "edit_mode.h"
+
+// TODO: can remove these headers after testing
+#include "line_array.h"
+#include "line.h"
 
 #define KEY_ESCAPE 27
 
@@ -49,6 +55,10 @@ int main()
 	struct window_t window;
 	window_init(&window);
 
+	struct screen_buffer_t screen;
+	screen_init(&screen, &window);
+	screen_draw(&screen);
+
 	enum mode_e mode = VISUAL;
 
 	draw_bottom(mode, &window, &cursor);
@@ -58,14 +68,18 @@ int main()
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// SWITCH TO EDIT MODE
 			case 'i':
 				if (mode == VISUAL)
 				{
 					mode = EDIT;
 					draw_bottom(mode, &window, &cursor);
 				}
+				else
+					edit_write_key(&screen, &cursor, key_pressed);
 				break;
 
+			// SWITCH TO VISUAL MODE
 			case KEY_ESCAPE: // technically this code is also for ALT
 				if (mode == EDIT)
 				{
@@ -75,6 +89,13 @@ int main()
 				break;
 
 			default:
+				// WRITE TO BUFFER IN EDIT MODE
+				if (mode == EDIT)
+				{
+					edit_write_key(&screen, &cursor, key_pressed);
+					refresh();
+				}
+
 				break;
 		}
 	}
