@@ -3,18 +3,28 @@
 
 #include <ncurses.h>
 #include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stddef.h>
+
+#define LINE_BUFF_SIZE 101
 
 // forward declarations
-struct line_array_t;
 struct window_t;
 struct cursor_t;
 
 struct screen_buffer_t
 {
-	struct line_array_t* lines;
+	// all lines in the buffer (e.g., entire source file)
+	char (*lines)[LINE_BUFF_SIZE];
+	size_t total_lines;
+	// current line index on the screen buffer (values between start_idx & end_idx)
 	size_t current_line;
+	// start index of which lines to display
 	size_t start_idx;
+	// end index of which lines to display (NOTE: end_idx - start_idx = max_rows)
 	size_t end_idx;
+	// max rows visible on screen
 	size_t max_rows;
 };
 
@@ -27,12 +37,17 @@ int8_t screen_init(
 // draw the screen buffer by writing the lines
 // from start_idx to end_idx
 void screen_draw(
-		const struct screen_buffer_t* const screen);
+		const struct screen_buffer_t* const screen,
+		const struct cursor_t* const cursor);
 
 // draw the buffer on the current cursor line position
 // to avoid redrawing the entire screen buffer.
 void screen_draw_line(
 		const struct screen_buffer_t* const screen,
 		const struct cursor_t* const cursor);
+
+// free the memory allocated by the line buffer
+void screen_free(
+		struct screen_buffer_t* screen);
 
 #endif

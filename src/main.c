@@ -3,10 +3,7 @@
 #include "cursor.h"
 #include "screen_buffer.h"
 #include "edit_mode.h"
-
-// TODO: can remove these headers after testing
-#include "line_array.h"
-#include "line.h"
+#include "screen_buffer.h"
 
 #define KEY_ESCAPE 27
 
@@ -18,6 +15,7 @@ enum mode_e
 
 static void draw_bottom(
 		const enum mode_e mode,
+		const struct screen_buffer_t* const screen,
 		const struct window_t* const window,
 		const struct cursor_t* const cursor)
 {
@@ -37,7 +35,7 @@ static void draw_bottom(
 	}
 
 	// restore original cursor position
-	move(cursor->row, cursor->column);
+	move(screen->current_line, cursor->column);
 
 	refresh();
 }
@@ -49,6 +47,8 @@ int main()
 	noecho();
 	cbreak();
 
+	// TODO: create an app_t struct that wraps the window, screen and cursor together
+	
 	struct cursor_t cursor;
 	cursor_init(&cursor);
 
@@ -57,11 +57,11 @@ int main()
 
 	struct screen_buffer_t screen;
 	screen_init(&screen, &window);
-	screen_draw(&screen);
+	screen_draw(&screen, &cursor);
 
 	enum mode_e mode = VISUAL;
 
-	draw_bottom(mode, &window, &cursor);
+	draw_bottom(mode, &screen, &window, &cursor);
 
 	while(1)
 	{
@@ -73,10 +73,14 @@ int main()
 				if (mode == VISUAL)
 				{
 					mode = EDIT;
-					draw_bottom(mode, &window, &cursor);
+					draw_bottom(mode, &screen, &window, &cursor);
+					screen_draw(&screen, &cursor);
 				}
 				else
+				{
 					edit_write_key(&screen, &cursor, key_pressed);
+					refresh();
+				}
 				break;
 
 			// SWITCH TO VISUAL MODE
@@ -84,9 +88,20 @@ int main()
 				if (mode == EDIT)
 				{
 					mode = VISUAL;
-					draw_bottom(mode, &window, &cursor);
+					draw_bottom(mode, &screen, &window, &cursor);
 				}
 				break;
+			// DUMP OUT CURRENT SCREEN BUFFER FOR DEBUGGING
+			case 'd':
+				if (mode == VISUAL)
+				{
+					clear();
+					for (size_t i = 0; i < screen.total_lines; ++i)
+					{
+						move(i, 0);
+						printw("%s", screen.lines[i]);
+					}
+				}
 
 			default:
 				// WRITE TO BUFFER IN EDIT MODE
@@ -100,7 +115,6 @@ int main()
 		}
 	}
 
-	clrtoeol();
 	endwin();
 
 	return 0;

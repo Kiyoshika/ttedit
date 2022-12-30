@@ -1,6 +1,10 @@
 #ifndef EDIT_MODE_H
 #define EDIT_MODE_H
 
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 #include <ncurses.h>
 
 // forward declarations

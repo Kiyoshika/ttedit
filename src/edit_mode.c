@@ -1,17 +1,18 @@
 #include "edit_mode.h"
 #include "screen_buffer.h"
-#include "line.h"
 #include "cursor.h"
-#include "line_array.h"
 
-/*static void _scroll_window_up(
+static void _scroll_window_up(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor)
 {
-	screen->start_idx--;
-	screen->end_idx--;
-	screen_draw(screen);
-}*/
+	if (screen->start_idx > 0)
+	{
+		screen->start_idx--;
+		screen->end_idx--;
+		screen_draw(screen, cursor);
+	}
+}
 
 static void _scroll_window_down(
 		struct screen_buffer_t* const screen,
@@ -19,7 +20,7 @@ static void _scroll_window_down(
 {
 	screen->start_idx++;
 	screen->end_idx++;
-	screen_draw(screen);
+	screen_draw(screen, cursor);
 }
 
 void edit_write_key(
@@ -29,29 +30,39 @@ void edit_write_key(
 {
 	if (key_pressed == '\n' || key_pressed == KEY_ENTER)
 	{
-		if (screen->current_line < screen->max_rows - 1)
+		if (screen->current_line < screen->max_rows)
 			screen->current_line++;
+
 		cursor->row++;
-
-		if (screen->current_line >= screen->end_idx - 1)
+		if (cursor->row >= screen->total_lines)
 		{
-			struct line_t line;
-			line_create(&line);
-			line_array_add(screen->lines, &line);
+			void* alloc = realloc(screen->lines, screen->total_lines * 2 * sizeof(*screen->lines));
+			if (!alloc)
+			{
+				// TODO: some error
+			}
 
+			screen->lines = alloc;
+			screen->total_lines *= 2;
+
+			for (size_t i = cursor->row; i < screen->total_lines; ++i)
+				memset(screen->lines[i], 0, sizeof(*screen->lines));
+		}
+
+		if (screen->current_line == screen->max_rows - 1)
+		{
 			screen->current_line--;
-			cursor->row--;
 			_scroll_window_down(screen, cursor);
 		}
 
 		cursor->column = 0;
-		move(cursor->row, cursor->column);
+		move(screen->current_line, cursor->column);
 	}
 	else if (key_pressed == KEY_BACKSPACE || key_pressed == 127)
 	{
 		// remove current character and shift all elements from the right over
 		// to the left
-		char* buffer = screen->lines->line[cursor->row].buffer;
+		char* buffer = screen->lines[cursor->row];
 
 		// if current line buffer is empty, wrap up to previous row
 		if (strlen(buffer) == 0)
@@ -60,30 +71,40 @@ void edit_write_key(
 				cursor->row--;
 			if (screen->current_line > 0)
 				screen->current_line--;
-			cursor->column = strlen(screen->lines->line[cursor->row].buffer);
+			cursor->column = strlen(screen->lines[cursor->row]);
+			move(screen->current_line, cursor->column);
+			refresh();
+
+			if (screen->current_line == 0)
+				_scroll_window_up(screen, cursor);
+
 			return;
 		}
 
-		size_t i = cursor->column - 1;
+		size_t i = cursor->column > 0 ? cursor->column - 1 : 0;
 		for (; i < strlen(buffer) - 1; ++i)
 			buffer[i] = buffer[i+1];
 		buffer[i] = '\0';
 
-		cursor->column--;
+		if (cursor->column > 0)
+			cursor->column--;
 
 		screen_draw_line(screen, cursor);
+		//screen_draw(screen, cursor);
+		move(screen->current_line, cursor->column);
 	}
 	else
 	{
 		// write key to buffer and wrap cursor if necessary
-		screen->lines->line[cursor->row].buffer[cursor->column++] = key_pressed;
+		screen->lines[cursor->row][cursor->column++] = key_pressed;
 		screen_draw_line(screen, cursor);
-		if (cursor->column == LINE_BUFF_SIZE) // defined in line.h
+		//screen_draw(screen, cursor);
+		if (cursor->column == LINE_BUFF_SIZE) // defined in screen_buffer.h
 		{
 			cursor->row++;
 			cursor->column = 0;
-			move(cursor->row, cursor->column);
-			//scroll_window(screen, cursor);
+			_scroll_window_down(screen, cursor);
+			move(screen->current_line, cursor->column);
 		}
 	}
 }
