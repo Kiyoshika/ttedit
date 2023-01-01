@@ -116,6 +116,30 @@ int main()
 					goto writekey;
 				break;
 
+			// PREPEND LINE
+			// (jump to first non-space character in buffer and toggle EDIT mode)
+			case 'p':
+				if (mode == VISUAL)
+				{
+					cursor_prepend_line(&cursor, &screen);
+					mode = EDIT;
+				}
+				else
+					goto writekey;
+				break;
+
+			// APPEND LINE
+			// (jump to end of buffer and toggle EDIT mode)
+			case 'a':
+				if (mode == VISUAL)
+				{
+					cursor_append_line(&cursor, &screen);
+					mode = EDIT;
+				}
+				else
+					goto writekey;
+				break;
+
 			// INSERT TAB (4 spaces)
 			case KEY_TAB:
 				if (mode == EDIT)

@@ -73,3 +73,30 @@ void cursor_move_right(
 	move(cursor->row, cursor->column);
 	refresh();
 }
+
+void cursor_prepend_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	for (size_t i = 0; i < strlen(screen->lines[cursor->row]); ++i)
+	{
+		if (screen->lines[cursor->row][i] != ' ')
+		{
+			cursor->column = i;
+			move(cursor->row, cursor->column);
+			refresh();
+			break;
+		}
+	}
+}
+
+void cursor_append_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	// clamp the cursor position to the max allowed length of the line buffer
+	size_t position = strlen(screen->lines[cursor->row]) > LINE_BUFF_SIZE - 1 ? LINE_BUFF_SIZE - 1 : strlen(screen->lines[cursor->row]) + 1;
+	cursor->column = position - 1;
+	move(cursor->row, cursor->column);
+	refresh();
+}
