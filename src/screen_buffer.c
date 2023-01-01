@@ -11,6 +11,7 @@ int8_t screen_init(
 	screen->max_rows = window->rows;
 	screen->current_line = 0;
 	screen->lines = calloc(1, sizeof(*screen->lines));
+	screen->max_occupied_line = 1;
 	screen->total_lines = 1;
 	if (!screen->lines)
 		return -1;
@@ -26,7 +27,9 @@ void screen_draw(
 	{
 		move(buffer_idx++, 0);
 		clrtoeol();
-		if (strlen(screen->lines[i]) == 0)
+		if (strlen(screen->lines[i]) == 0 && i < screen->max_occupied_line)
+			printw("");
+		else if (strlen(screen->lines[i]) == 0 && i >= screen->max_occupied_line)
 			printw("~");
 		else
 			printw("%s", screen->lines[i]);
