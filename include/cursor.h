@@ -34,4 +34,15 @@ void cursor_move_up(
 void cursor_move_down(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen);
+
+// move the cursor to the first non-space character in buffer
+void cursor_prepend_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
+// move the cursor to the end of the line
+void cursor_append_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
 #endif
