@@ -46,6 +46,14 @@ void screen_draw_line(
 		const struct screen_buffer_t* const screen,
 		const struct cursor_t* const cursor);
 
+void screen_scroll_up(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor);
+
+void screen_scroll_down(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor);
+
 // free the memory allocated by the line buffer
 void screen_free(
 		struct screen_buffer_t* screen);

@@ -2,28 +2,6 @@
 #include "screen_buffer.h"
 #include "cursor.h"
 
-static void _scroll_window_up(
-		struct screen_buffer_t* const screen,
-		struct cursor_t* const cursor)
-{
-	if (screen->start_idx > 0)
-		screen->start_idx--;
-
-	if (screen->end_idx > 0)
-		screen->end_idx--;
-
-	screen_draw(screen, cursor);
-}
-
-static void _scroll_window_down(
-		struct screen_buffer_t* const screen,
-		struct cursor_t* const cursor)
-{
-	screen->start_idx++;
-	screen->end_idx++;
-	screen_draw(screen, cursor);
-}
-
 void edit_write_key(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor,
@@ -53,7 +31,7 @@ void edit_write_key(
 		if (screen->current_line == screen->max_rows - 1)
 		{
 			screen->current_line--;
-			_scroll_window_down(screen, cursor);
+			screen_scroll_down(screen, cursor);
 		}
 
 		cursor->column = 0;
@@ -69,7 +47,7 @@ void edit_write_key(
 		if (strlen(buffer) == 0)
 		{
 			if (screen->current_line == 0)
-				_scroll_window_up(screen, cursor);
+				screen_scroll_up(screen, cursor);
 
 			if (cursor->row > 0)
 				cursor->row--;
@@ -106,7 +84,7 @@ void edit_write_key(
 		{
 			cursor->row++;
 			cursor->column = 0;
-			_scroll_window_down(screen, cursor);
+			screen_scroll_down(screen, cursor);
 			move(screen->current_line, cursor->column);
 		}
 	}

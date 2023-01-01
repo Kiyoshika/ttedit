@@ -65,6 +65,9 @@ int main()
 
 	while(1)
 	{
+		// note about these case statements: some of of these cases
+		// intentionally leave out the "break" statement to fall back to the "default"
+		// case which writes the key to the buffer.
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
@@ -77,10 +80,39 @@ int main()
 					screen_draw(&screen, &cursor);
 				}
 				else
-				{
-					edit_write_key(&screen, &cursor, key_pressed);
-					screen_draw(&screen, &cursor);
-				}
+					goto writekey;
+				break;
+
+			// MOVE CURSOR LEFT
+			case 'h':
+				if (mode == VISUAL)
+					cursor_move_left(&cursor, &screen);
+				else
+					goto writekey;
+				break;
+
+			// MOVE CURSOR RIGHT
+			case 'l':
+				if (mode == VISUAL)
+					cursor_move_right(&cursor, &screen);
+				else
+					goto writekey;
+				break;
+
+			// MOVE CURSOR UP
+			case 'k':
+				if (mode == VISUAL)
+					cursor_move_up(&cursor, &screen);
+				else
+					goto writekey;
+				break;
+
+			// MOVE CURSOR DOWN
+			case 'j':
+				if (mode == VISUAL)
+					cursor_move_down(&cursor, &screen);
+				else
+					goto writekey;
 				break;
 
 			// SWITCH TO VISUAL MODE
@@ -92,18 +124,8 @@ int main()
 					screen_draw(&screen, &cursor);
 				}
 				break;
-			// DUMP OUT CURRENT SCREEN BUFFER FOR DEBUGGING
-			case 'd':
-				if (mode == VISUAL)
-				{
-					clear();
-					for (size_t i = 0; i < screen.total_lines; ++i)
-					{
-						move(i, 0);
-						printw("%s", screen.lines[i]);
-					}
-				}
 
+			writekey:
 			default:
 				// WRITE TO BUFFER IN EDIT MODE
 				if (mode == EDIT)
@@ -111,7 +133,6 @@ int main()
 					edit_write_key(&screen, &cursor, key_pressed);
 					screen_draw(&screen, &cursor);
 				}
-
 				break;
 		}
 	}

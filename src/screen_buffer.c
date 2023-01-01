@@ -48,6 +48,28 @@ void screen_draw_line(
 	refresh();
 }
 
+void screen_scroll_up(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	if (screen->start_idx > 0)
+		screen->start_idx--;
+
+	if (screen->end_idx > 0)
+		screen->end_idx--;
+
+	screen_draw(screen, cursor);
+}
+
+void screen_scroll_down(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	screen->start_idx++;
+	screen->end_idx++;
+	screen_draw(screen, cursor);
+}
+
 void screen_free(
 		struct screen_buffer_t* screen)
 {
