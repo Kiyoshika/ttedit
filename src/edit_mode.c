@@ -16,6 +16,24 @@ static void _shift_buffer_up(
 		memcpy(screen->lines[i], screen->lines[i+1], strlen(screen->lines[i+1]));
 		screen->lines[i][strlen(screen->lines[i+1])] = '\0'; // just in case...
 	}
+	memset(screen->lines[i], 0, LINE_BUFF_SIZE);
+}
+
+// move all of the screen->lines buffer down one index
+// starting from the bottom to row_idx + 1 (e.g., after pressing return key on a line)
+static void _shift_buffer_down(
+		struct screen_buffer_t* const screen,
+		const size_t row_idx)
+{
+	// NOTE: since max_occupied_line actually starts at 1 rather than 0, we subtract
+	// an extra one from the indices to account for that. Admittedly it's a little messy
+	// but it is what it is
+	for (size_t i = screen->max_occupied_line - 1; i > row_idx; --i)
+	{
+		memset(screen->lines[i+1-1], 0, LINE_BUFF_SIZE);
+		memcpy(screen->lines[i+1-1], screen->lines[i-1], strlen(screen->lines[i-1]));
+		screen->lines[i+1-1][strlen(screen->lines[i-1])] = '\0'; // just in case
+	}
 }
 
 void edit_write_key(
@@ -25,11 +43,15 @@ void edit_write_key(
 {
 	if (key_pressed == '\n' || key_pressed == KEY_ENTER)
 	{
+		char buffer[LINE_BUFF_SIZE] = {0};
+		memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
+
 		if (screen->current_line < screen->max_rows)
 			screen->current_line++;
 
 		cursor->row++;
-		if (cursor->row >= screen->total_lines)
+		screen->max_occupied_line++;
+		if (screen->max_occupied_line + 1 >= screen->total_lines)
 		{
 			void* alloc = realloc(screen->lines, screen->total_lines * 2 * sizeof(*screen->lines));
 			if (!alloc)
@@ -40,12 +62,9 @@ void edit_write_key(
 			screen->lines = alloc;
 			screen->total_lines *= 2;
 
-			for (size_t i = cursor->row; i < screen->total_lines; ++i)
-				memset(screen->lines[i], 0, sizeof(*screen->lines));
+			/*for (size_t i = cursor->row; i < screen->total_lines; ++i)
+				memset(screen->lines[i], 0, sizeof(*screen->lines));*/
 		}
-
-		if (cursor->row + 1 >= screen->max_occupied_line)
-			screen->max_occupied_line++;
 
 		if (screen->current_line == screen->max_rows - 1)
 		{
@@ -53,22 +72,37 @@ void edit_write_key(
 			screen_scroll_down(screen, cursor);
 		}
 
+		// if buffer is not empty, copy contents from cursor
+		// to end of buffer and paste it to next line (while removing
+		// it from original line)
+		if (strlen(buffer) > 0)
+		{
+			char partial_buffer[LINE_BUFF_SIZE] = {0};
+			memcpy(partial_buffer, buffer + cursor->column, strlen(buffer) - cursor->column);
+			memset(screen->lines[cursor->row - 1] + cursor->column, 0, LINE_BUFF_SIZE - cursor->column);
+			_shift_buffer_down(screen, cursor->row);
+			memset(screen->lines[cursor->row], 0, LINE_BUFF_SIZE);
+			memcpy(screen->lines[cursor->row], partial_buffer, strlen(partial_buffer));
+		}
+
 		cursor->column = 0;
 		move(screen->current_line, cursor->column);
+		refresh();
 	}
 	else if (key_pressed == KEY_BACKSPACE || key_pressed == 127)
 	{
+		// if cursor is a very top of the buffer, do nothing
+		if (cursor->row == 0 && cursor->column == 0)
+			return;
+
 		// remove current character and shift all elements from the right over
 		// to the left
-		char* buffer = screen->lines[cursor->row];
+		char buffer[LINE_BUFF_SIZE] = {0};
+		memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
 
 		// if current line buffer is empty, wrap up to previous row
 		if (strlen(buffer) == 0)
 		{
-			// if at very top of buffer, do nothing
-			if (cursor->row == 0)
-				return;
-
 			if (cursor->row > 0)
 				cursor->row--;
 
@@ -87,11 +121,33 @@ void edit_write_key(
 
 			return;
 		}
+		// if cursor is at beginning but buffer is not empty,
+		// we want to take the buffer and wrap it up to the previous line
+		else if (cursor->column == 0 && strlen(buffer) > 0)
+		{
+			if (cursor->row > 0)
+				cursor->row--;
+			
+			if (screen->current_line > 0)
+				screen->current_line--;
+
+			size_t row_len = strlen(screen->lines[cursor->row]);
+			size_t remaining_len = LINE_BUFF_SIZE - row_len - 1;
+			strncat(screen->lines[cursor->row], buffer, remaining_len);
+
+			screen->max_occupied_line--;
+			_shift_buffer_up(screen, cursor->row);
+
+			cursor->column = row_len;
+			move(screen->current_line, cursor->column);
+
+			return;
+		}
 
 		size_t i = cursor->column > 0 ? cursor->column - 1 : 0;
 		for (; i < strlen(buffer) - 1; ++i)
-			buffer[i] = buffer[i+1];
-		buffer[i] = '\0';
+			screen->lines[cursor->row][i] = screen->lines[cursor->row][i+1];
+		screen->lines[cursor->row][i] = '\0';
 
 		if (cursor->column > 0)
 			cursor->column--;
