@@ -2,6 +2,22 @@
 #include "screen_buffer.h"
 #include "cursor.h"
 
+// move all of the screen->lines buffer up one index into
+// row_idx + 1 (e.g., after deleting a line or backspacing an entire line)
+static void _shift_buffer_up(
+		struct screen_buffer_t* const screen,
+		const size_t row_idx)
+{
+	size_t i = row_idx + 1;
+	for (; i < screen->total_lines - 1; ++i)
+	{
+		// clear buffer and copy next line into current line
+		memset(screen->lines[i], 0, LINE_BUFF_SIZE);
+		memcpy(screen->lines[i], screen->lines[i+1], strlen(screen->lines[i+1]));
+		screen->lines[i][strlen(screen->lines[i+1])] = '\0'; // just in case...
+	}
+}
+
 void edit_write_key(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor,
@@ -28,6 +44,9 @@ void edit_write_key(
 				memset(screen->lines[i], 0, sizeof(*screen->lines));
 		}
 
+		if (cursor->row + 1 >= screen->max_occupied_line)
+			screen->max_occupied_line++;
+
 		if (screen->current_line == screen->max_rows - 1)
 		{
 			screen->current_line--;
@@ -46,8 +65,9 @@ void edit_write_key(
 		// if current line buffer is empty, wrap up to previous row
 		if (strlen(buffer) == 0)
 		{
-			if (screen->current_line == 0)
-				screen_scroll_up(screen, cursor);
+			// if at very top of buffer, do nothing
+			if (cursor->row == 0)
+				return;
 
 			if (cursor->row > 0)
 				cursor->row--;
@@ -55,8 +75,14 @@ void edit_write_key(
 			if (screen->current_line > 0)
 				screen->current_line--;
 
+			// when removing a line, we also decrement the max occupied lines
+			// and shift the buffer up one
+			screen->max_occupied_line--;
+			_shift_buffer_up(screen, cursor->row);
+
 			cursor->column = strlen(screen->lines[cursor->row]);
 			move(screen->current_line, cursor->column);
+
 			refresh();
 
 			return;

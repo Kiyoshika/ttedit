@@ -18,6 +18,9 @@ struct screen_buffer_t
 	// all lines in the buffer (e.g., entire source file)
 	char (*lines)[LINE_BUFF_SIZE];
 	size_t total_lines;
+	// the largest (occupied) line meaning the latest line with content.
+	// this is used for locking the cursor to prevent moving past our buffer
+	size_t max_occupied_line;
 	// current line index on the screen buffer (values between start_idx & end_idx)
 	size_t current_line;
 	// start index of which lines to display

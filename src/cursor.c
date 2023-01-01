@@ -12,6 +12,10 @@ void cursor_move_down(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen)
 {
+	// prevent user from accessing unallocated space
+	if (cursor->row + 1 >= screen->max_occupied_line)
+		return;
+
 	cursor->row++;
 	screen->current_line++;
 
