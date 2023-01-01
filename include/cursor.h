@@ -44,4 +44,14 @@ void cursor_append_line(
 		struct cursor_t* const cursor,
 		const struct screen_buffer_t* const screen);
 
+// move cursor to the bottom of the visual buffer (no scrolling)
+void cursor_jump_visual_bottom(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
+// move cursor to the bottom of the entire buffer (scrolling if needed)
+void cursor_jump_bottom(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
 #endif
