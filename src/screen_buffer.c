@@ -29,7 +29,7 @@ void screen_draw(
 		clrtoeol();
 		if (strlen(screen->lines[i]) == 0 && i < screen->max_occupied_line)
 			printw("");
-		else if (strlen(screen->lines[i]) == 0 && i >= screen->max_occupied_line)
+		else if (i >= screen->max_occupied_line)
 			printw("~");
 		else
 			printw("%s", screen->lines[i]);
@@ -56,10 +56,10 @@ void screen_scroll_up(
 		struct cursor_t* const cursor)
 {
 	if (screen->start_idx > 0)
+	{
 		screen->start_idx--;
-
-	if (screen->end_idx > 0)
 		screen->end_idx--;
+	}
 
 	screen_draw(screen, cursor);
 }

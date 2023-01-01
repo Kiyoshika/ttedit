@@ -4,24 +4,23 @@
 
 // move all of the screen->lines buffer up one index into
 // row_idx + 1 (e.g., after deleting a line or backspacing an entire line)
-static void _shift_buffer_up(
+void edit_shift_buffer_up(
 		struct screen_buffer_t* const screen,
 		const size_t row_idx)
 {
-	size_t i = row_idx + 1;
-	for (; i < screen->total_lines - 1; ++i)
+	size_t i = row_idx;
+	for (; i < screen->total_lines; ++i)
 	{
 		// clear buffer and copy next line into current line
 		memset(screen->lines[i], 0, LINE_BUFF_SIZE);
 		memcpy(screen->lines[i], screen->lines[i+1], strlen(screen->lines[i+1]));
 		screen->lines[i][strlen(screen->lines[i+1])] = '\0'; // just in case...
 	}
-	memset(screen->lines[i], 0, LINE_BUFF_SIZE);
 }
 
 // move all of the screen->lines buffer down one index
 // starting from the bottom to row_idx + 1 (e.g., after pressing return key on a line)
-static void _shift_buffer_down(
+void edit_shift_buffer_down(
 		struct screen_buffer_t* const screen,
 		const size_t row_idx)
 {
@@ -36,59 +35,84 @@ static void _shift_buffer_down(
 	}
 }
 
+void edit_insert_new_line(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor,
+		const bool copy_buffer)
+{
+	char buffer[LINE_BUFF_SIZE] = {0};
+	memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
+
+	if (screen->current_line < screen->max_rows)
+		screen->current_line++;
+
+	cursor->row++;
+	screen->max_occupied_line++;
+	if (screen->max_occupied_line + 1 >= screen->total_lines)
+	{
+		void* alloc = realloc(screen->lines, screen->total_lines * 2 * sizeof(*screen->lines));
+		if (!alloc)
+		{
+			// TODO: some error
+		}
+
+		screen->lines = alloc;
+		screen->total_lines *= 2;
+
+		for (size_t i = cursor->row; i < screen->total_lines; ++i)
+			memset(screen->lines[i], 0, LINE_BUFF_SIZE);
+	}
+
+	if (screen->current_line == screen->max_rows - 1)
+	{
+		screen->current_line--;
+		screen_scroll_down(screen, cursor);
+	}
+
+	// if buffer is not empty, copy contents from cursor
+	// to end of buffer and paste it to next line (while removing
+	// it from original line)
+	char partial_buffer[LINE_BUFF_SIZE] = {0};
+	if (copy_buffer)
+	{
+		memcpy(partial_buffer, buffer + cursor->column, strlen(buffer) - cursor->column);
+		memset(screen->lines[cursor->row - 1] + cursor->column, 0, LINE_BUFF_SIZE - cursor->column);
+	}
+	edit_shift_buffer_down(screen, cursor->row);
+	memset(screen->lines[cursor->row], 0, LINE_BUFF_SIZE);
+	if (copy_buffer)
+		memcpy(screen->lines[cursor->row], partial_buffer, strlen(partial_buffer));
+
+	cursor->column = 0;
+	move(screen->current_line, cursor->column);
+	refresh();
+}
+
+void edit_delete_current_line(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	edit_shift_buffer_up(screen, cursor->row);
+	if (screen->max_occupied_line > 1)
+		screen->max_occupied_line--;
+	if (cursor->row == screen->max_occupied_line)
+	{
+		cursor->row--;
+		if (screen->current_line > 0)
+			screen->current_line--;
+	}
+	cursor->column = strlen(screen->lines[cursor->row]);
+	move(cursor->row, cursor->column);
+	refresh();
+}
+
 void edit_write_key(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor,
 		const int key_pressed)
 {
 	if (key_pressed == '\n' || key_pressed == KEY_ENTER)
-	{
-		char buffer[LINE_BUFF_SIZE] = {0};
-		memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
-
-		if (screen->current_line < screen->max_rows)
-			screen->current_line++;
-
-		cursor->row++;
-		screen->max_occupied_line++;
-		if (screen->max_occupied_line + 1 >= screen->total_lines)
-		{
-			void* alloc = realloc(screen->lines, screen->total_lines * 2 * sizeof(*screen->lines));
-			if (!alloc)
-			{
-				// TODO: some error
-			}
-
-			screen->lines = alloc;
-			screen->total_lines *= 2;
-
-			/*for (size_t i = cursor->row; i < screen->total_lines; ++i)
-				memset(screen->lines[i], 0, sizeof(*screen->lines));*/
-		}
-
-		if (screen->current_line == screen->max_rows - 1)
-		{
-			screen->current_line--;
-			screen_scroll_down(screen, cursor);
-		}
-
-		// if buffer is not empty, copy contents from cursor
-		// to end of buffer and paste it to next line (while removing
-		// it from original line)
-		if (strlen(buffer) > 0)
-		{
-			char partial_buffer[LINE_BUFF_SIZE] = {0};
-			memcpy(partial_buffer, buffer + cursor->column, strlen(buffer) - cursor->column);
-			memset(screen->lines[cursor->row - 1] + cursor->column, 0, LINE_BUFF_SIZE - cursor->column);
-			_shift_buffer_down(screen, cursor->row);
-			memset(screen->lines[cursor->row], 0, LINE_BUFF_SIZE);
-			memcpy(screen->lines[cursor->row], partial_buffer, strlen(partial_buffer));
-		}
-
-		cursor->column = 0;
-		move(screen->current_line, cursor->column);
-		refresh();
-	}
+		edit_insert_new_line(screen, cursor, true);
 	else if (key_pressed == KEY_BACKSPACE || key_pressed == 127)
 	{
 		// if cursor is a very top of the buffer, do nothing
@@ -103,17 +127,16 @@ void edit_write_key(
 		// if current line buffer is empty, wrap up to previous row
 		if (strlen(buffer) == 0)
 		{
+			// when removing a line, we also decrement the max occupied lines
+			// and shift the buffer up one
+			screen->max_occupied_line--;
+			edit_shift_buffer_up(screen, cursor->row);
+
 			if (cursor->row > 0)
 				cursor->row--;
 
 			if (screen->current_line > 0)
 				screen->current_line--;
-
-			// when removing a line, we also decrement the max occupied lines
-			// and shift the buffer up one
-			screen->max_occupied_line--;
-			_shift_buffer_up(screen, cursor->row);
-
 			cursor->column = strlen(screen->lines[cursor->row]);
 			move(screen->current_line, cursor->column);
 
@@ -125,6 +148,9 @@ void edit_write_key(
 		// we want to take the buffer and wrap it up to the previous line
 		else if (cursor->column == 0 && strlen(buffer) > 0)
 		{
+			screen->max_occupied_line--;
+			edit_shift_buffer_up(screen, cursor->row);
+
 			if (cursor->row > 0)
 				cursor->row--;
 			
@@ -134,9 +160,6 @@ void edit_write_key(
 			size_t row_len = strlen(screen->lines[cursor->row]);
 			size_t remaining_len = LINE_BUFF_SIZE - row_len - 1;
 			strncat(screen->lines[cursor->row], buffer, remaining_len);
-
-			screen->max_occupied_line--;
-			_shift_buffer_up(screen, cursor->row);
 
 			cursor->column = row_len;
 			move(screen->current_line, cursor->column);
