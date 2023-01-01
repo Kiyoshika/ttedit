@@ -4,7 +4,6 @@
 This is a list of known issues.
 * For some reason some garbage text like `q^G^A` will randomly appear while writing in EDIT mode
     * This seems related to reallocation. For example if you press enter 4 times it will appear
-* When moving cursor to the middle of some text, it will overwrite the existing text rather than actually inserting it between
 
 ## Feature Requests
 This is a list of items that I eventually want to add.
