@@ -53,8 +53,7 @@ void cursor_move_up(
 }
 
 void cursor_move_left(
-		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen)
+		struct cursor_t* const cursor)
 {
 	if (cursor->column > 0)
 		cursor->column--;
@@ -65,7 +64,7 @@ void cursor_move_left(
 
 void cursor_move_right(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen)
+		const struct screen_buffer_t* const screen)
 {
 	if (cursor->column < strlen(screen->lines[cursor->row]))
 		cursor->column++;
@@ -76,7 +75,7 @@ void cursor_move_right(
 
 void cursor_prepend_line(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen)
+		const struct screen_buffer_t* const screen)
 {
 	for (size_t i = 0; i < strlen(screen->lines[cursor->row]); ++i)
 	{
@@ -92,11 +91,11 @@ void cursor_prepend_line(
 
 void cursor_append_line(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen)
+		const struct screen_buffer_t* const screen)
 {
 	// clamp the cursor position to the max allowed length of the line buffer
-	size_t position = strlen(screen->lines[cursor->row]) > LINE_BUFF_SIZE - 1 ? LINE_BUFF_SIZE - 1 : strlen(screen->lines[cursor->row]) + 1;
-	cursor->column = position - 1;
+	size_t position = strlen(screen->lines[cursor->row]) > LINE_BUFF_SIZE - 1 ? LINE_BUFF_SIZE - 1 : strlen(screen->lines[cursor->row]);
+	cursor->column = position;
 	move(cursor->row, cursor->column);
 	refresh();
 }

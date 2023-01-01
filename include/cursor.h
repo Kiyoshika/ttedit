@@ -20,12 +20,11 @@ void cursor_init(
 		struct cursor_t* const cursor);
 
 void cursor_move_left(
-		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen);
+		struct cursor_t* const cursor);
 
 void cursor_move_right(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen);
+		const struct screen_buffer_t* const screen);
 
 void cursor_move_up(
 		struct cursor_t* const cursor,
@@ -38,11 +37,11 @@ void cursor_move_down(
 // move the cursor to the first non-space character in buffer
 void cursor_prepend_line(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen);
+		const struct screen_buffer_t* const screen);
 
 // move the cursor to the end of the line
 void cursor_append_line(
 		struct cursor_t* const cursor,
-		struct screen_buffer_t* const screen);
+		const struct screen_buffer_t* const screen);
 
 #endif

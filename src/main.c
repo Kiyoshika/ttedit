@@ -87,7 +87,7 @@ int main()
 			// MOVE CURSOR LEFT
 			case 'h':
 				if (mode == VISUAL)
-					cursor_move_left(&cursor, &screen);
+					cursor_move_left(&cursor);
 				else
 					goto writekey;
 				break;
