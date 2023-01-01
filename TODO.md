@@ -2,11 +2,14 @@
 
 ## Bugs
 This is a list of known issues.
-* For some reason some garbage text like `q^G^A` will randomly appear while writing in EDIT mode
-    * This seems related to reallocation. For example if you press enter 4 times it will appear
+* No major issues known (yet)
+
+## Memory
+* Right now, heap memory is not being free'd (`screen_buffer.lines`) since we haven't implemented a write/quit method yet. When that's finished, Ctrl+C will be disabled to prevent the user from exiting application without freeing memory.
 
 ## Feature Requests
 This is a list of items that I eventually want to add.
+* Read/write to files
 * Line numbers (static or relative)
 * Line jumping
 * Scope jumping (parenthesis and brances)

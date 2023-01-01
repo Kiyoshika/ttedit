@@ -123,6 +123,7 @@ int main()
 				{
 					cursor_prepend_line(&cursor, &screen);
 					mode = EDIT;
+					draw_bottom(mode, &screen, &window, &cursor);
 				}
 				else
 					goto writekey;
@@ -135,6 +136,31 @@ int main()
 				{
 					cursor_append_line(&cursor, &screen);
 					mode = EDIT;
+					draw_bottom(mode, &screen, &window, &cursor);
+				}
+				else
+					goto writekey;
+				break;
+
+			// ADD NEW LINE UNDER CURSOR AND JUMP TO IT
+			case 'n':
+				if (mode == VISUAL)
+				{
+					edit_insert_new_line(&screen, &cursor, false);
+					screen_draw(&screen, &cursor);
+					mode = EDIT;
+					draw_bottom(mode, &screen, &window, &cursor);
+				}
+				else
+					goto writekey;
+				break;
+
+			// DELETE CURRENT LINE AND JUMP UP A LINE
+			case 'd':
+				if (mode == VISUAL)
+				{
+					edit_delete_current_line(&screen, &cursor);
+					screen_draw(&screen, &cursor);
 				}
 				else
 					goto writekey;

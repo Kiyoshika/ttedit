@@ -20,3 +20,5 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `j` - move cursor down
 * `p` (prepend) - move to first non-space character and toggle EDIT mode
 * `a` (append) - move to end of buffer and toggle EDIT mode
+* `d` (delete) - delete the current line
+* `n` (newline) - create new line under cursor and jump to it in EDIT mode
