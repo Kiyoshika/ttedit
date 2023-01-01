@@ -158,8 +158,18 @@ void edit_write_key(
 	}
 	else
 	{
-		// write key to buffer and wrap cursor if necessary
+		// if cursor is in the middle of a buffer, shift the buffer
+		// over to the right to insert the character
+		if (strlen(screen->lines[cursor->row]) > 0
+				&& cursor->column < strlen(screen->lines[cursor->row])
+				&& cursor->column < LINE_BUFF_SIZE - 1)
+		{
+			for (size_t i = strlen(screen->lines[cursor->row]); i --> cursor->column;)
+				screen->lines[cursor->row][i + 1] = screen->lines[cursor->row][i];
+		}
+
 		screen->lines[cursor->row][cursor->column++] = key_pressed;
+
 		screen_draw_line(screen, cursor);
 		//screen_draw(screen, cursor);
 		if (cursor->column == LINE_BUFF_SIZE) // defined in screen_buffer.h
