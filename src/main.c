@@ -6,6 +6,7 @@
 #include "screen_buffer.h"
 
 #define KEY_ESCAPE 27
+#define KEY_TAB 9
 
 enum mode_e
 {
@@ -113,6 +114,16 @@ int main()
 					cursor_move_down(&cursor, &screen);
 				else
 					goto writekey;
+				break;
+
+			// INSERT TAB (4 spaces)
+			case KEY_TAB:
+				if (mode == EDIT)
+				{
+					for (size_t i = 0; i < 4; ++i)
+						edit_write_key(&screen, &cursor, ' ');
+					screen_draw(&screen, &cursor);
+				}
 				break;
 
 			// SWITCH TO VISUAL MODE
