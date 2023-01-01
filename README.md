@@ -13,7 +13,7 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `ESC` - go back to VISUAL mode
 
 ### Visual Mode Commands
-* `i` - enter EDIT mode
+* `i` (insert) - enter EDIT mode
 * `h` - move cursor left
 * `l` - move cursor right
 * `k` - move cursor up
