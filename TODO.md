@@ -5,7 +5,7 @@ This is a list of known issues.
 * For some reason some garbage text like `q^G^A` will randomly appear while writing in EDIT mode
     * This seems related to reallocation. For example if you press enter 4 times it will appear
 * When moving cursor to the middle of some text, it will overwrite the existing text rather than actually inserting it between
-* Tab characters (`\t`) are very buggy, convert tabs into spaces to make it easier to work with
+* When using backspace, if you move the cursor to the beginning while the buffer is not empty, it will start deleting the characters on current line instead of wrapping to the above line and copying the remaining buffer (kind of acting like the DEL key)
 
 ## Feature Requests
 This is a list of items that I eventually want to add.
