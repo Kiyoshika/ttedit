@@ -54,4 +54,13 @@ void cursor_jump_bottom(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen);
 
+// move cursor to the top of the visual buffer (no scrolling)
+void cursor_jump_visual_top(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
+// move cursor to the top of the entire buffer (scrolling if needed)
+void cursor_jump_top(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
 #endif

@@ -22,3 +22,7 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `a` (append) - move to end of buffer and toggle EDIT mode
 * `d` (delete) - delete the current line
 * `n` (newline) - create new line under cursor and jump to it in EDIT mode
+* `b` (bottom) - jump to bottom of visual buffer (no scrolling)
+* `shift + b` (bottom) - jump to bottom of entire buffer (scrolling if needed)
+* `t` (top) - jump to top of visual buffer (no scrolling)
+* `shift + t` (top) - jump to top of entire buffer (scrolling if needed)

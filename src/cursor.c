@@ -114,7 +114,9 @@ void cursor_jump_visual_bottom(
 	screen_draw(screen, cursor);
 }
 
-// move cursor to the bottom of the entire buffer (scrolling if needed)
+// move cursor to the bottom of the entire buffer (scrolling if needed).
+// we have to take some extra care in case we have not allocated as many lines
+// as the screen length
 void cursor_jump_bottom(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen)
@@ -127,6 +129,29 @@ void cursor_jump_bottom(
 		screen->start_idx = screen->end_idx - screen->max_rows;
 	}
 	screen->current_line = cursor->row > screen->max_rows ? screen->max_rows : cursor->row;
+	move(screen->current_line, cursor->column);
+	refresh();
+	screen_draw(screen, cursor);
+}
+
+void cursor_jump_visual_top(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	cursor->row -= screen->current_line;
+	screen->current_line = 0;
+	move(cursor->row, cursor->column);
+	screen_draw(screen, cursor);
+}
+
+void cursor_jump_top(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	cursor->row = 0;
+	screen->current_line = 0;
+	screen->start_idx = 0;
+	screen->end_idx = screen->max_rows;
 	move(screen->current_line, cursor->column);
 	refresh();
 	screen_draw(screen, cursor);

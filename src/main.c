@@ -182,6 +182,22 @@ int main()
 					goto writekey;
 				break;
 
+			// JUMP TO TOP OF VISUAL BUFFER (no scrolling)
+			case 't':
+				if (mode == VISUAL)
+					cursor_jump_visual_top(&cursor, &screen);
+				else
+					goto writekey;
+				break;
+
+			// JUMP TO TOP OF ENTIRE BUFFER (scrolling if needed)
+			case 'T':
+				if (mode == VISUAL)
+					cursor_jump_top(&cursor, &screen);
+				else
+					goto writekey;
+				break;
+
 			// INSERT TAB (4 spaces)
 			case KEY_TAB:
 				if (mode == EDIT)
