@@ -36,7 +36,7 @@ static void draw_bottom(
 	}
 
 	// restore original cursor position
-	move(screen->current_line, cursor->column);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 
 	refresh();
 }
@@ -47,6 +47,14 @@ int main()
 	clear();
 	noecho();
 	cbreak();
+
+	// use colours if terminal supports it
+	if (has_colors())
+	{
+		start_color();
+		init_pair(1, COLOR_WHITE, COLOR_BLACK);
+		attron(COLOR_PAIR(1));
+	}
 
 	// TODO: create an app_t struct that wraps the window, screen and cursor together
 	

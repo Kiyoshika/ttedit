@@ -10,7 +10,6 @@ This is a list of known issues.
 ## Feature Requests
 This is a list of items that I eventually want to add.
 * Read/write to files
-* Line numbers (static or relative)
 * Line jumping
 * Scope jumping (parenthesis and brances)
 * Word jumping (forward and back)

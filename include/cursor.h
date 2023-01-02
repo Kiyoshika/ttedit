@@ -10,8 +10,12 @@ struct screen_buffer_t;
 
 struct cursor_t
 {
+	// current row in total buffer we're pointing at
 	uint32_t row;
+	// current column (character) in current line we're pointing at
 	uint32_t column;
+	// total space the line numbers take up (will need to subtract this while writing to buffer)
+	uint16_t line_num_size;
 };
 
 // pass a cursor_t by address

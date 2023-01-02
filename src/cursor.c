@@ -6,6 +6,7 @@ void cursor_init(
 {
 	cursor->row = 0;
 	cursor->column = 0;
+	cursor->line_num_size = 2;
 }
 
 void cursor_move_down(
@@ -58,7 +59,7 @@ void cursor_move_left(
 	if (cursor->column > 0)
 		cursor->column--;
 
-	move(cursor->row, cursor->column);
+	move(cursor->row, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
@@ -69,7 +70,7 @@ void cursor_move_right(
 	if (cursor->column < strlen(screen->lines[cursor->row]))
 		cursor->column++;
 
-	move(cursor->row, cursor->column);
+	move(cursor->row, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
