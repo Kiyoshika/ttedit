@@ -29,7 +29,7 @@ void cursor_move_down(
 	if (cursor->column > strlen(screen->lines[cursor->row]))
 		cursor->column = strlen(screen->lines[cursor->row]);
 
-	move(screen->current_line, cursor->column);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
@@ -49,7 +49,7 @@ void cursor_move_up(
 	if (cursor->column > strlen(screen->lines[cursor->row]))
 		cursor->column = strlen(screen->lines[cursor->row]);
 
-	move(screen->current_line, cursor->column);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
