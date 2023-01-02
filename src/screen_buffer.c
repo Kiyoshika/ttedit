@@ -20,23 +20,43 @@ int8_t screen_init(
 
 void screen_draw(
 		const struct screen_buffer_t* const screen,
-		const struct cursor_t* const cursor)
+		struct cursor_t* const cursor)
 {
 	size_t buffer_idx = 0;
+	char number[10] = {0};
+	cursor->line_num_size = log10(screen->max_occupied_line) + 1;
+
 	for (size_t i = screen->start_idx; i < screen->end_idx - 1; ++i)
 	{
-		move(buffer_idx++, 0);
+		move(buffer_idx, 0);
 		clrtoeol();
+		
+		// print line numbers dynamically according to their size
+		if (i < screen->max_occupied_line)
+		{
+			sprintf(number, "%ld", i + 1);
+			size_t bound = cursor->line_num_size - strlen(number);
+			for (size_t i = 1; i < bound; ++i)
+				printw(" ");
+			printw("%s", number);
+			memset(number, 0, 10);
+		}
+
 		if (strlen(screen->lines[i]) == 0 && i < screen->max_occupied_line)
 			printw("");
 		else if (i >= screen->max_occupied_line)
 			printw("~");
 		else
+		{
+			move(buffer_idx, cursor->line_num_size + 1);
 			printw("%s", screen->lines[i]);
+		}
+
+		buffer_idx++;
 	}
 
 	// restore original cursor position
-	move(screen->current_line, cursor->column);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 
 	refresh();
 }
@@ -45,7 +65,7 @@ void screen_draw_line(
 		const struct screen_buffer_t* const screen,
 		const struct cursor_t* const cursor)
 {
-	move(screen->current_line, 0);
+	move(screen->current_line, cursor->line_num_size + 1);
 	clrtoeol();
 	printw("%s", screen->lines[cursor->row]);
 	refresh();

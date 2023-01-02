@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <math.h>
 
 #define LINE_BUFF_SIZE 101
 
@@ -41,7 +42,7 @@ int8_t screen_init(
 // from start_idx to end_idx
 void screen_draw(
 		const struct screen_buffer_t* const screen,
-		const struct cursor_t* const cursor);
+		struct cursor_t* const cursor);
 
 // draw the buffer on the current cursor line position
 // to avoid redrawing the entire screen buffer.

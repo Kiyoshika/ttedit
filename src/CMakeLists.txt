@@ -7,7 +7,7 @@ target_include_directories(ttecursor PUBLIC ${TTEdit_SOURCE_DIR}/include)
 
 add_library(ttescreen screen_buffer.c)
 target_include_directories(ttescreen PUBLIC ${TTEdit_SOURCE_DIR}/include)
-target_link_libraries(ttescreen)
+target_link_libraries(ttescreen m) # m = math library
 
 add_library(tteeditmode edit_mode.c)
 target_include_directories(tteeditmode PUBLIC ${TTEdit_SOURCE_DIR}/include)
