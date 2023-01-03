@@ -13,6 +13,7 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `ESC` - go back to VISUAL mode
 
 ### Visual Mode Commands
+* `ESC` - clear the command buffer (e.g., if you started typing a number to jump lines but want to cancel, you can press `ESC` to clear the buffer and write a different number)
 * `i` (insert) - enter EDIT mode
 * `h` - move cursor left
 * `l` - move cursor right
@@ -26,3 +27,4 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `shift + b` (bottom) - jump to bottom of entire buffer (scrolling if needed)
 * `t` (top) - jump to top of visual buffer (no scrolling)
 * `shift + t` (top) - jump to top of entire buffer (scrolling if needed)
+* `{X}j` (jump) - jump to line `X` (e.g., `23j` will jump to line 23)

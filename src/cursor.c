@@ -54,12 +54,13 @@ void cursor_move_up(
 }
 
 void cursor_move_left(
-		struct cursor_t* const cursor)
+		struct cursor_t* const cursor,
+		const struct screen_buffer_t* const screen)
 {
 	if (cursor->column > 0)
 		cursor->column--;
 
-	move(cursor->row, cursor->column + cursor->line_num_size + 1);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
@@ -70,7 +71,7 @@ void cursor_move_right(
 	if (cursor->column < strlen(screen->lines[cursor->row]))
 		cursor->column++;
 
-	move(cursor->row, cursor->column + cursor->line_num_size + 1);
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
 }
 
@@ -83,7 +84,7 @@ void cursor_prepend_line(
 		if (screen->lines[cursor->row][i] != ' ')
 		{
 			cursor->column = i;
-			move(cursor->row, cursor->column);
+			move(screen->current_line, cursor->column);
 			refresh();
 			break;
 		}
@@ -97,7 +98,7 @@ void cursor_append_line(
 	// clamp the cursor position to the max allowed length of the line buffer
 	size_t position = strlen(screen->lines[cursor->row]) > LINE_BUFF_SIZE - 1 ? LINE_BUFF_SIZE - 1 : strlen(screen->lines[cursor->row]);
 	cursor->column = position;
-	move(cursor->row, cursor->column);
+	move(screen->current_line, cursor->column);
 	refresh();
 }
 
@@ -111,7 +112,8 @@ void cursor_jump_visual_bottom(
 	size_t difference = position - screen->current_line;
 	cursor->row += difference;
 	screen->current_line = position;
-	move(cursor->row, cursor->column);
+	cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	screen_draw(screen, cursor);
 }
 
@@ -130,7 +132,8 @@ void cursor_jump_bottom(
 		screen->start_idx = screen->end_idx - screen->max_rows;
 	}
 	screen->current_line = cursor->row > screen->max_rows ? screen->max_rows : cursor->row;
-	move(screen->current_line, cursor->column);
+	cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
 	screen_draw(screen, cursor);
 }
@@ -141,7 +144,8 @@ void cursor_jump_visual_top(
 {
 	cursor->row -= screen->current_line;
 	screen->current_line = 0;
-	move(cursor->row, cursor->column);
+	cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	screen_draw(screen, cursor);
 }
 
@@ -153,7 +157,48 @@ void cursor_jump_top(
 	screen->current_line = 0;
 	screen->start_idx = 0;
 	screen->end_idx = screen->max_rows;
-	move(screen->current_line, cursor->column);
+	cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
+	screen_draw(screen, cursor);
+}
+
+void cursor_jump_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen,
+		const uint32_t line_num)
+{
+	// this portion is if the jump is within the visible screen buffer
+	// OR if jumping to a cursor position ABOVE the visible screen buffer
+	// which will make the jumped line the top of the buffer (scrolling up)
+	if (line_num < screen->end_idx - 1
+			&& line_num <= screen->max_occupied_line)
+	{
+		cursor->row = line_num - 1;
+		if (line_num < screen->start_idx)
+		{
+			screen->start_idx = line_num - 1;
+			screen->end_idx = screen->start_idx + screen->max_rows;
+			screen->current_line = 0;
+		}
+		else
+			screen->current_line = cursor->row - screen->start_idx;
+		cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+		move(screen->current_line, cursor->column + cursor->line_num_size + 1);
+	}
+	// this portion is if the jump is BELOW the visible screen buffer causing us
+	// to scroll down
+	else if (line_num >= screen->end_idx - 1 && line_num < screen->max_occupied_line)
+	{
+		screen->end_idx = line_num + 1;
+		screen->start_idx = screen->end_idx - screen->max_rows;
+		screen->current_line = screen->max_rows - 2;
+		cursor->row = line_num - 1;
+		cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
+		move(screen->current_line, cursor->column + cursor->line_num_size + 1);
+		refresh();
+		screen_draw(screen, cursor);
+	}
+
 	screen_draw(screen, cursor);
 }

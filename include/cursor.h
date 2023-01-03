@@ -24,7 +24,8 @@ void cursor_init(
 		struct cursor_t* const cursor);
 
 void cursor_move_left(
-		struct cursor_t* const cursor);
+		struct cursor_t* const cursor,
+		const struct screen_buffer_t* const screen);
 
 void cursor_move_right(
 		struct cursor_t* const cursor,
@@ -67,4 +68,11 @@ void cursor_jump_visual_top(
 void cursor_jump_top(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen);
+
+// jump cursor to specific line number
+void cursor_jump_line(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen,
+		const uint32_t line_num);
+
 #endif
