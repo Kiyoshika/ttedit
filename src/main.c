@@ -4,6 +4,7 @@
 #include "screen_buffer.h"
 #include "edit_mode.h"
 #include "screen_buffer.h"
+#include "command_buffer.h"
 
 #define KEY_ESCAPE 27
 #define KEY_TAB 9
@@ -68,6 +69,9 @@ int main()
 	screen_init(&screen, &window);
 	screen_draw(&screen, &cursor);
 
+	struct command_buffer_t command;
+	command_init(&command);
+
 	enum mode_e mode = VISUAL;
 
 	draw_bottom(mode, &screen, &window, &cursor);
@@ -95,7 +99,7 @@ int main()
 			// MOVE CURSOR LEFT
 			case 'h':
 				if (mode == VISUAL)
-					cursor_move_left(&cursor);
+					cursor_move_left(&cursor, &screen);
 				else
 					goto writekey;
 				break;
@@ -117,9 +121,17 @@ int main()
 				break;
 
 			// MOVE CURSOR DOWN
+			// OR TRIGGER JUMP COMMAND (if buffer is non-empty)
+			// TODO: add the cursor_char (last argument) later (which will be used for scope jumping)
+			// for now just using a placeholder space character
 			case 'j':
 				if (mode == VISUAL)
-					cursor_move_down(&cursor, &screen);
+				{
+					if (strlen(command.buffer) == 0)
+						cursor_move_down(&cursor, &screen);
+					else
+						command_execute(&command, &cursor, &screen, 'j', ' ');
+				}
 				else
 					goto writekey;
 				break;
@@ -206,6 +218,22 @@ int main()
 					goto writekey;
 				break;
 
+			case '0':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
+				if (mode == VISUAL)
+					command_append(&command, key_pressed);
+				else
+					goto writekey;
+				break;
+
 			// INSERT TAB (4 spaces)
 			case KEY_TAB:
 				if (mode == EDIT)
@@ -224,6 +252,8 @@ int main()
 					draw_bottom(mode, &screen, &window, &cursor);
 					screen_draw(&screen, &cursor);
 				}
+				else if (mode == VISUAL)
+					command_clear(&command);
 				break;
 
 			writekey:
