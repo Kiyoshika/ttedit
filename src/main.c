@@ -256,6 +256,17 @@ int main()
 					command_clear(&command);
 				break;
 
+			// JUMP WORD
+			case 'w':
+				if (mode == VISUAL)
+				{
+					cursor_jump_word_forward(&cursor, &screen);
+					screen_draw(&screen, &cursor);
+				}
+				else
+					goto writekey;
+				break;
+
 			writekey:
 			default:
 				// WRITE TO BUFFER IN EDIT MODE

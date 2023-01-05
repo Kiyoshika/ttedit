@@ -202,3 +202,45 @@ void cursor_jump_line(
 
 	screen_draw(screen, cursor);
 }
+
+void cursor_jump_word_forward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	bool found_word = false;
+	size_t row = cursor->row;
+	size_t column = cursor->column;
+	while (!found_word && row < screen->max_occupied_line)
+	{
+		for (size_t i = column; i < strlen(screen->lines[row]); ++i)
+		{
+			// start of new line, after a space character, or after a punctuation character
+			// disallowing consecutive space (e.g., tab) or punctuation (e.g., ->)
+			if ((i == 0 && row != cursor->row)
+				|| ((screen->lines[row][i] == ' ' && screen->lines[row][i+1] != ' ') && !ispunct(screen->lines[row][i+1]))
+				|| (ispunct(screen->lines[row][i]) && !ispunct(screen->lines[row][i+1]) && screen->lines[row][i] != ' '))
+			{
+				found_word = true;
+				// scroll screen by one line if needed
+				screen->current_line += row - cursor->row;
+				if (screen->current_line >= screen->max_rows - 1)
+				{
+					screen->start_idx++;
+					screen->end_idx++;
+					screen->current_line--;
+				}
+				cursor->row = row;
+				cursor->column = i;
+				// if word is beginning of buffer, leave it at 0, otherwise move
+				// cursor after space/punctuation character
+				if (i > 0)
+					cursor->column++;
+				move(screen->current_line, cursor->column);
+				break;
+			}
+		}
+
+		row++;
+		column = 0;
+	}
+}
