@@ -3,6 +3,7 @@
 ## Bugs
 This is a list of known issues.
 * Jumping to a line below 1 (e.g., `0j`) will segfault - no bounds checking done on `screen.start_idx`
+* When hitting bottom of screen (with scrolling), scrolling partially up and back down will not reach the very last line. This is resolved if you scroll all the way up to line 1 and back down.
 
 ## Memory
 * Right now, heap memory is not being free'd (`screen_buffer.lines`) since we haven't implemented a write/quit method yet. When that's finished, Ctrl+C will be disabled to prevent the user from exiting application without freeing memory.
