@@ -2,7 +2,7 @@
 
 ## Bugs
 This is a list of known issues.
-* No major issues known (yet)
+* Jumping to a line below 1 (e.g., `0j`) will segfault - no bounds checking done on `screen.start_idx`
 
 ## Memory
 * Right now, heap memory is not being free'd (`screen_buffer.lines`) since we haven't implemented a write/quit method yet. When that's finished, Ctrl+C will be disabled to prevent the user from exiting application without freeing memory.
