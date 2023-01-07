@@ -40,11 +40,11 @@ void cursor_move_up(
 	if (cursor->row > 0)
 		cursor->row--;
 
-	if (screen->current_line > 0)
-		screen->current_line--;
-
 	if (screen->current_line == 0)
 		screen_scroll_up(screen, cursor);
+
+	if (screen->current_line > 0)
+		screen->current_line--;
 
 	if (cursor->column > strlen(screen->lines[cursor->row]))
 		cursor->column = strlen(screen->lines[cursor->row]);
@@ -221,20 +221,26 @@ void cursor_jump_word_forward(
 				|| (ispunct(screen->lines[row][i]) && !ispunct(screen->lines[row][i+1]) && screen->lines[row][i] != ' '))
 			{
 				found_word = true;
+
 				// scroll screen by one line if needed
-				screen->current_line += row - cursor->row;
+				if (row > cursor->row)
+					screen->current_line++;
+
 				if (screen->current_line >= screen->max_rows - 1)
 				{
 					screen->start_idx++;
 					screen->end_idx++;
 					screen->current_line--;
 				}
+
 				cursor->row = row;
 				cursor->column = i;
+
 				// if word is beginning of buffer, leave it at 0, otherwise move
 				// cursor after space/punctuation character
 				if (i > 0)
 					cursor->column++;
+
 				move(screen->current_line, cursor->column);
 				break;
 			}
@@ -242,5 +248,61 @@ void cursor_jump_word_forward(
 
 		row++;
 		column = 0;
+	}
+}
+
+void cursor_jump_word_backward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	bool found_word = false;
+	size_t row = cursor->row;
+	size_t column = cursor->column;
+	while (!found_word && row >= 0)
+	{
+		// avoid underflow
+		if (column == 0)
+			column++;
+
+		for (size_t i = column - 1; i --> 1;)
+		{
+			// start of new line, after a space character, or after a punctuation character
+			// disallowing consecutive space (e.g., tab) or punctuation (e.g., ->)
+			if (i == 1
+				|| ((screen->lines[row][i-1] == ' ' && screen->lines[row][i] != ' ') && !ispunct(screen->lines[row][i]))
+				|| (ispunct(screen->lines[row][i-1]) && !ispunct(screen->lines[row][i]) && screen->lines[row][i-1] != ' '))
+			{
+				found_word = true;
+
+				// scroll screen by one line if needed
+				if (cursor->row > row)
+					screen->current_line--;
+
+				if (screen->current_line == 0)
+				{
+					screen->start_idx--;
+					screen->end_idx--;
+					//screen->current_line++;
+				}
+
+				cursor->row = row;
+				cursor->column = i;
+				
+				// special case if we're at beginning of buffer, force
+				// the cursor to position zero
+				if (i == 1)
+					cursor->column = 0;
+				else
+					cursor->column = i;
+
+				move(screen->current_line, cursor->column);
+				break;
+			}
+		}
+
+		if (row == 0)
+			break;
+		row--;
+		column = strlen(screen->lines[row]);
 	}
 }

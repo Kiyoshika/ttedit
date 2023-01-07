@@ -80,4 +80,10 @@ void cursor_jump_line(
 void cursor_jump_word_forward(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen);
+
+// jump cursor to previous word or symbol (!, ., $, etc.)
+void cursor_jump_word_backward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
 #endif

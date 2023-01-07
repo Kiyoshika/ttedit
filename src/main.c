@@ -256,11 +256,22 @@ int main()
 					command_clear(&command);
 				break;
 
-			// JUMP WORD
+			// JUMP FORWARD A WORD
 			case 'w':
 				if (mode == VISUAL)
 				{
 					cursor_jump_word_forward(&cursor, &screen);
+					screen_draw(&screen, &cursor);
+				}
+				else
+					goto writekey;
+				break;
+
+			// JUMP BACKWARD A WORD
+			case 'W':
+				if (mode == VISUAL)
+				{
+					cursor_jump_word_backward(&cursor, &screen);
 					screen_draw(&screen, &cursor);
 				}
 				else
