@@ -40,11 +40,11 @@ void cursor_move_up(
 	if (cursor->row > 0)
 		cursor->row--;
 
-	if (screen->current_line > 0)
-		screen->current_line--;
-
 	if (screen->current_line == 0)
 		screen_scroll_up(screen, cursor);
+
+	if (screen->current_line > 0)
+		screen->current_line--;
 
 	if (cursor->column > strlen(screen->lines[cursor->row]))
 		cursor->column = strlen(screen->lines[cursor->row]);
@@ -188,7 +188,7 @@ void cursor_jump_line(
 	}
 	// this portion is if the jump is BELOW the visible screen buffer causing us
 	// to scroll down
-	else if (line_num >= screen->end_idx - 1 && line_num < screen->max_occupied_line)
+	else if (line_num >= screen->end_idx - 1 && line_num <= screen->max_occupied_line)
 	{
 		screen->end_idx = line_num + 1;
 		screen->start_idx = screen->end_idx - screen->max_rows;
@@ -201,4 +201,108 @@ void cursor_jump_line(
 	}
 
 	screen_draw(screen, cursor);
+}
+
+void cursor_jump_word_forward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	bool found_word = false;
+	size_t row = cursor->row;
+	size_t column = cursor->column;
+	while (!found_word && row < screen->max_occupied_line)
+	{
+		for (size_t i = column; i < strlen(screen->lines[row]); ++i)
+		{
+			// start of new line, after a space character, or after a punctuation character
+			// disallowing consecutive space (e.g., tab) or punctuation (e.g., ->)
+			if ((i == 0 && row != cursor->row)
+				|| ((screen->lines[row][i] == ' ' && screen->lines[row][i+1] != ' ') && !ispunct(screen->lines[row][i+1]))
+				|| (ispunct(screen->lines[row][i]) && !ispunct(screen->lines[row][i+1]) && screen->lines[row][i] != ' '))
+			{
+				found_word = true;
+
+				// scroll screen by one line if needed
+				if (row > cursor->row)
+					screen->current_line++;
+
+				if (screen->current_line >= screen->max_rows - 1)
+				{
+					screen->start_idx++;
+					screen->end_idx++;
+					screen->current_line--;
+				}
+
+				cursor->row = row;
+				cursor->column = i;
+
+				// if word is beginning of buffer, leave it at 0, otherwise move
+				// cursor after space/punctuation character
+				if (i > 0)
+					cursor->column++;
+
+				move(screen->current_line, cursor->column);
+				break;
+			}
+		}
+
+		row++;
+		column = 0;
+	}
+}
+
+void cursor_jump_word_backward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen)
+{
+	bool found_word = false;
+	size_t row = cursor->row;
+	size_t column = cursor->column;
+	while (!found_word && row >= 0)
+	{
+		// avoid underflow
+		if (column == 0)
+			column++;
+
+		for (size_t i = column - 1; i --> 1;)
+		{
+			// start of new line, after a space character, or after a punctuation character
+			// disallowing consecutive space (e.g., tab) or punctuation (e.g., ->)
+			if (i == 1
+				|| ((screen->lines[row][i-1] == ' ' && screen->lines[row][i] != ' ') && !ispunct(screen->lines[row][i]))
+				|| (ispunct(screen->lines[row][i-1]) && !ispunct(screen->lines[row][i]) && screen->lines[row][i-1] != ' '))
+			{
+				found_word = true;
+
+				if (cursor->row > row && screen->current_line == 0)
+				{
+					screen->start_idx--;
+					screen->end_idx--;
+					//screen->current_line++;
+				}
+
+				// scroll screen by one line if needed
+				if (cursor->row > row && screen->current_line > 0)
+					screen->current_line--;
+
+				cursor->row = row;
+				cursor->column = i;
+				
+				// special case if we're at beginning of buffer, force
+				// the cursor to position zero
+				if (i == 1)
+					cursor->column = 0;
+				else
+					cursor->column = i;
+
+				move(screen->current_line, cursor->column);
+				break;
+			}
+		}
+
+		if (row == 0)
+			break;
+		row--;
+		column = strlen(screen->lines[row]);
+	}
 }

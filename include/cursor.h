@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <ncurses.h>
 #include <string.h>
+#include <ctype.h>
 
 // forward declaration
 struct screen_buffer_t;
@@ -74,5 +75,15 @@ void cursor_jump_line(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen,
 		const uint32_t line_num);
+
+// jump cursor to next word or symbol (!, ., $, etc.)
+void cursor_jump_word_forward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
+
+// jump cursor to previous word or symbol (!, ., $, etc.)
+void cursor_jump_word_backward(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen);
 
 #endif
