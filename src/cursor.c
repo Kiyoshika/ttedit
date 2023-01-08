@@ -188,7 +188,7 @@ void cursor_jump_line(
 	}
 	// this portion is if the jump is BELOW the visible screen buffer causing us
 	// to scroll down
-	else if (line_num >= screen->end_idx - 1 && line_num < screen->max_occupied_line)
+	else if (line_num >= screen->end_idx - 1 && line_num <= screen->max_occupied_line)
 	{
 		screen->end_idx = line_num + 1;
 		screen->start_idx = screen->end_idx - screen->max_rows;
@@ -274,16 +274,16 @@ void cursor_jump_word_backward(
 			{
 				found_word = true;
 
-				// scroll screen by one line if needed
-				if (cursor->row > row)
-					screen->current_line--;
-
-				if (screen->current_line == 0)
+				if (cursor->row > row && screen->current_line == 0)
 				{
 					screen->start_idx--;
 					screen->end_idx--;
 					//screen->current_line++;
 				}
+
+				// scroll screen by one line if needed
+				if (cursor->row > row && screen->current_line > 0)
+					screen->current_line--;
 
 				cursor->row = row;
 				cursor->column = i;

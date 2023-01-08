@@ -28,3 +28,5 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `t` (top) - jump to top of visual buffer (no scrolling)
 * `shift + t` (top) - jump to top of entire buffer (scrolling if needed)
 * `{X}j` (jump) - jump to line `X` (e.g., `23j` will jump to line 23)
+* `w` - jump forward one word
+* `shift + w` - jump backward one word
