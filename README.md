@@ -5,9 +5,10 @@ This project is still extremely young and pretty buggy, it's more so an experime
 
 ## KNOWN ISSUES
 * Currently `ttedit` cannot render tabs (`\t`) correctly. So if you open a file with `ttedit` that was written with another editor (like vim), it will be very awkward to use.
-* Jumping to a line below 0 (e.g., `0j`) will segfault - there is no bounds checking done and the upper boundary
+* Jumping to a line below 1 (e.g., `0j`) will segfault - there is no bounds checking done at the upper boundary
 * Writing past 255 characters on a line exhibits some odd behaviour - this case is not properly handled
 * There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
+* `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
 
 ## How to Use
 Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.	
@@ -39,5 +40,5 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `t` (top) - jump to top of visual buffer (no scrolling)
 * `shift + t` (top) - jump to top of entire buffer (scrolling if needed)
 * `{X}j` (jump) - jump to line `X` (e.g., `23j` will jump to line 23)
-* `w` - jump forward one word
-* `shift + w` - jump backward one word
+* `w` (word) - jump forward one word
+* `shift + w` (word) - jump backward one word

@@ -35,6 +35,75 @@ void edit_shift_buffer_down(
 	}
 }
 
+void edit_backspace(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	// if cursor is a very top of the buffer, do nothing
+	if (cursor->row == 0 && cursor->column == 0)
+		return;
+
+	// remove current character and shift all elements from the right over
+	// to the left
+	char buffer[LINE_BUFF_SIZE] = {0};
+	memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
+
+	// if current line buffer is empty, wrap up to previous row
+	if (strlen(buffer) == 0)
+	{
+		// when removing a line, we also decrement the max occupied lines
+		// and shift the buffer up one
+		screen->max_occupied_line--;
+		edit_shift_buffer_up(screen, cursor->row);
+
+		if (cursor->row > 0)
+			cursor->row--;
+
+		if (screen->current_line > 0)
+			screen->current_line--;
+		cursor->column = strlen(screen->lines[cursor->row]);
+		move(screen->current_line, cursor->column);
+
+		refresh();
+
+		return;
+	}
+	// if cursor is at beginning but buffer is not empty,
+	// we want to take the buffer and wrap it up to the previous line
+	else if (cursor->column == 0 && strlen(buffer) > 0)
+	{
+		screen->max_occupied_line--;
+		edit_shift_buffer_up(screen, cursor->row);
+
+		if (cursor->row > 0)
+			cursor->row--;
+		
+		if (screen->current_line > 0)
+			screen->current_line--;
+
+		size_t row_len = strlen(screen->lines[cursor->row]);
+		size_t remaining_len = LINE_BUFF_SIZE - row_len - 1;
+		strncat(screen->lines[cursor->row], buffer, remaining_len);
+
+		cursor->column = row_len;
+		move(screen->current_line, cursor->column);
+
+		return;
+	}
+
+	size_t i = cursor->column > 0 ? cursor->column - 1 : 0;
+	for (; i < strlen(buffer) - 1; ++i)
+		screen->lines[cursor->row][i] = screen->lines[cursor->row][i+1];
+	screen->lines[cursor->row][i] = '\0';
+
+	if (cursor->column > 0)
+		cursor->column--;
+
+	screen_draw_line(screen, cursor);
+	//screen_draw(screen, cursor);
+	move(screen->current_line, cursor->column);
+}
+
 void edit_insert_new_line(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor,
@@ -111,71 +180,7 @@ void edit_write_key(
 	if (key_pressed == '\n' || key_pressed == KEY_ENTER)
 		edit_insert_new_line(screen, cursor, true);
 	else if (key_pressed == KEY_BACKSPACE || key_pressed == 127)
-	{
-		// if cursor is a very top of the buffer, do nothing
-		if (cursor->row == 0 && cursor->column == 0)
-			return;
-
-		// remove current character and shift all elements from the right over
-		// to the left
-		char buffer[LINE_BUFF_SIZE] = {0};
-		memcpy(buffer, screen->lines[cursor->row], strlen(screen->lines[cursor->row]));
-
-		// if current line buffer is empty, wrap up to previous row
-		if (strlen(buffer) == 0)
-		{
-			// when removing a line, we also decrement the max occupied lines
-			// and shift the buffer up one
-			screen->max_occupied_line--;
-			edit_shift_buffer_up(screen, cursor->row);
-
-			if (cursor->row > 0)
-				cursor->row--;
-
-			if (screen->current_line > 0)
-				screen->current_line--;
-			cursor->column = strlen(screen->lines[cursor->row]);
-			move(screen->current_line, cursor->column);
-
-			refresh();
-
-			return;
-		}
-		// if cursor is at beginning but buffer is not empty,
-		// we want to take the buffer and wrap it up to the previous line
-		else if (cursor->column == 0 && strlen(buffer) > 0)
-		{
-			screen->max_occupied_line--;
-			edit_shift_buffer_up(screen, cursor->row);
-
-			if (cursor->row > 0)
-				cursor->row--;
-			
-			if (screen->current_line > 0)
-				screen->current_line--;
-
-			size_t row_len = strlen(screen->lines[cursor->row]);
-			size_t remaining_len = LINE_BUFF_SIZE - row_len - 1;
-			strncat(screen->lines[cursor->row], buffer, remaining_len);
-
-			cursor->column = row_len;
-			move(screen->current_line, cursor->column);
-
-			return;
-		}
-
-		size_t i = cursor->column > 0 ? cursor->column - 1 : 0;
-		for (; i < strlen(buffer) - 1; ++i)
-			screen->lines[cursor->row][i] = screen->lines[cursor->row][i+1];
-		screen->lines[cursor->row][i] = '\0';
-
-		if (cursor->column > 0)
-			cursor->column--;
-
-		screen_draw_line(screen, cursor);
-		//screen_draw(screen, cursor);
-		move(screen->current_line, cursor->column);
-	}
+		edit_backspace(screen, cursor);
 	else
 	{
 		// if cursor is in the middle of a buffer, shift the buffer
