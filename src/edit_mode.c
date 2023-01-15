@@ -58,9 +58,6 @@ void edit_insert_new_line(
 
 		screen->lines = alloc;
 		screen->total_lines *= 2;
-
-		for (size_t i = cursor->row; i < screen->total_lines; ++i)
-			memset(screen->lines[i], 0, LINE_BUFF_SIZE);
 	}
 
 	if (screen->current_line == screen->max_rows - 1)

@@ -1,4 +1,6 @@
 #include <ncurses.h>
+#include <stdio.h>
+#include <signal.h>
 #include "window.h"
 #include "cursor.h"
 #include "screen_buffer.h"
@@ -14,6 +16,12 @@ enum mode_e
 	VISUAL,
 	EDIT
 };
+
+void INThandler(int sig)
+{
+	signal(sig, SIG_IGN);
+	// do nothing (prevent user closing with Ctrl+C)
+}
 
 static void draw_bottom(
 		const enum mode_e mode,
@@ -42,8 +50,19 @@ static void draw_bottom(
 	refresh();
 }
 
-int main()
+int main(int argc, char* argv[])
 {
+	if (argc < 2)
+	{
+		fprintf(stderr, "Please provide a file name.\n");
+		return -1;
+	}
+
+	// disable Ctrl+C (otherwise we can't free memory from screen buffer properly)
+	signal(SIGINT, INThandler);
+
+	char* filename = argv[1];
+
 	initscr();
 	clear();
 	noecho();
@@ -67,6 +86,13 @@ int main()
 
 	struct screen_buffer_t screen;
 	screen_init(&screen, &window);
+	if (!screen_read_file(&screen, filename))
+	{
+		fprintf(stderr, "There was a problem opening the file.\n");
+		screen_free(&screen);
+		endwin();
+		return -1;
+	}
 	screen_draw(&screen, &cursor);
 
 	struct command_buffer_t command;
@@ -78,12 +104,38 @@ int main()
 
 	while(1)
 	{
-		// note about these case statements: some of of these cases
-		// intentionally leave out the "break" statement to fall back to the "default"
-		// case which writes the key to the buffer.
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// WRITE CONTENTS TO FILE
+			case 's':
+				if (mode == VISUAL)
+				{
+					if (!screen_write_to_file(&screen, filename))
+					{
+						fprintf(stderr, "Couldn't write to file");
+						screen_free(&screen);
+						endwin();
+						return -1;
+					}
+					// TODO: write "save successful" or some type of message
+				}
+				else
+					goto writekey;
+				break;
+
+			// QUIT FILE
+			case 'q':
+				if (mode == VISUAL)
+				{
+					screen_free(&screen);
+					endwin();
+					return 0;
+				}
+				else
+					goto writekey;
+				break;
+
 			// SWITCH TO EDIT MODE
 			case 'i':
 				if (mode == VISUAL)

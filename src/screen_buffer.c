@@ -99,3 +99,65 @@ void screen_free(
 	free(screen->lines);
 	screen->lines = NULL;
 }
+
+bool screen_read_file(
+		struct screen_buffer_t* const screen,
+		const char* filename)
+{
+	FILE* ifile = fopen(filename, "ab+");
+	if (!ifile)
+		return false;
+
+	char current_buffer[LINE_BUFF_SIZE] = {0};
+	size_t current_line = 0;
+	while (fgets(current_buffer, LINE_BUFF_SIZE, ifile))
+	{
+		// replace newlines with terminators (they're written manually
+		// in the write file)
+		if (current_buffer[strlen(current_buffer)-1] == '\n')
+			current_buffer[strlen(current_buffer)-1] = '\0';
+
+		memcpy(
+				screen->lines[current_line++], 
+				current_buffer, 
+				strlen(current_buffer));
+
+		if (current_line == screen->total_lines)
+		{
+			void* alloc = realloc(screen->lines, screen->total_lines * 2 * sizeof(*screen->lines));
+			if (!alloc)
+				return false;
+
+			screen->lines = alloc;
+			screen->total_lines *= 2;
+			for (size_t i = current_line; i < screen->total_lines; ++i)
+				memset(screen->lines[i], 0, LINE_BUFF_SIZE);
+		}
+		screen->max_occupied_line++;
+		memset(current_buffer, 0, LINE_BUFF_SIZE);
+	}
+
+	fclose(ifile);
+	return true;
+}
+
+bool screen_write_to_file(
+		const struct screen_buffer_t* const screen,
+		const char* filename)
+{
+	FILE* ofile = fopen(filename, "w");
+	if (!ofile)
+		return false;
+
+	for (size_t i = 0; i < screen->max_occupied_line; ++i)
+	{
+		fwrite(screen->lines[i], sizeof(char), strlen(screen->lines[i]), ofile);
+		// don't add extra newline at end of file
+		if (i < screen->max_occupied_line - 1)
+			fwrite("\n", sizeof(char), 1, ofile);
+	}
+
+	fclose(ofile);
+	
+	return true;
+}

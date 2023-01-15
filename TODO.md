@@ -3,8 +3,6 @@
 ## Bugs
 This is a list of known issues.
 * Jumping to a line below 1 (e.g., `0j`) will segfault - no bounds checking done on `screen.start_idx`
-* Using the newline command `n` above the last line in the buffer will delete it. E.g., if you have 7 total lines and you use `n` on line 6, line 7 will be cleared.
-    * UPDATE: this apparently doesn't happen all the time; it's unknown what the root cause is...
 
 ## Memory
 * Right now, heap memory is not being free'd (`screen_buffer.lines`) since we haven't implemented a write/quit method yet. When that's finished, Ctrl+C will be disabled to prevent the user from exiting application without freeing memory.
@@ -12,7 +10,6 @@ This is a list of known issues.
 ## Feature Requests
 This is a list of items that I eventually want to add.
 * Show the COMMAND BUFFER on the bottom of the screen (maybe towards the bottom right) to make it clearer for user to see what they're typing
-* Read/write to files
 * Scope jumping (parenthesis and brances)
 * Copy/paste buffer
 * Undo/redo (up to a maximum memory cap, e.g., 100 commands)
