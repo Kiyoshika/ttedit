@@ -3,6 +3,9 @@ This is a dummy project greatly inspired by vi(m) to help me learn the `ncurses`
 
 This project is still extremely young and pretty buggy, it's more so an experiment rather than to serve as full-fledged software (vim already exists, afterall).
 
+## How to Use
+Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.	
+
 ## Building from Source
 This is a typical cmake project, you can clone the repo, create a build folder inside and `cmake .. && make` which will create a `ttedit` executable inside `src/` folder within your build folder.
 
@@ -19,6 +22,8 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `l` - move cursor right
 * `k` - move cursor up
 * `j` - move cursor down
+* `s` (save) - Save the contents of the buffer into the file
+* `q` (quit) - Exit the editor without saving (WARNING, IT WILL NOT ASK YOU IF YOU WANT TO SAVE FIRST AFTER MAKING CHANGES)
 * `p` (prepend) - move to first non-space character and toggle EDIT mode
 * `a` (append) - move to end of buffer and toggle EDIT mode
 * `d` (delete) - delete the current line

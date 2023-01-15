@@ -6,7 +6,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <math.h>
+#include <stdbool.h>
 
 #define LINE_BUFF_SIZE 101
 
@@ -61,5 +63,16 @@ void screen_scroll_down(
 // free the memory allocated by the line buffer
 void screen_free(
 		struct screen_buffer_t* screen);
+
+// read contents of file to populate screen buffer
+// (used when first opening ttedit)
+bool screen_read_file(
+		struct screen_buffer_t* const screen,
+		const char* filename);
+
+// write the contents (lines) to the output file
+bool screen_write_to_file(
+		const struct screen_buffer_t* const screen,
+		const char* filename);
 
 #endif
