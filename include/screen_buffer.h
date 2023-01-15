@@ -10,7 +10,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-#define LINE_BUFF_SIZE 101
+#define LINE_BUFF_SIZE 256
 
 // forward declarations
 struct window_t;

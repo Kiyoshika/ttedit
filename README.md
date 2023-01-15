@@ -6,6 +6,8 @@ This project is still extremely young and pretty buggy, it's more so an experime
 ## KNOWN ISSUES
 * Currently `ttedit` cannot render tabs (`\t`) correctly. So if you open a file with `ttedit` that was written with another editor (like vim), it will be very awkward to use.
 * Jumping to a line below 0 (e.g., `0j`) will segfault - there is no bounds checking done and the upper boundary
+* Writing past 255 characters on a line exhibits some odd behaviour - this case is not properly handled
+* There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
 
 ## How to Use
 Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.	
