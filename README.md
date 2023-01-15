@@ -3,6 +3,10 @@ This is a dummy project greatly inspired by vi(m) to help me learn the `ncurses`
 
 This project is still extremely young and pretty buggy, it's more so an experiment rather than to serve as full-fledged software (vim already exists, afterall).
 
+## KNOWN ISSUES
+* Currently `ttedit` cannot render tabs (`\t`) correctly. So if you open a file with `ttedit` that was written with another editor (like vim), it will be very awkward to use.
+* Jumping to a line below 0 (e.g., `0j`) will segfault - there is no bounds checking done and the upper boundary
+
 ## How to Use
 Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.	
 
