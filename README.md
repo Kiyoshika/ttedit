@@ -11,7 +11,10 @@ This project is still extremely young and pretty buggy, it's more so an experime
 * `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
 
 ## How to Use
-Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.	
+Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.
+
+## Demo Video (as of 15 Jan 2023)
+https://user-images.githubusercontent.com/49159969/212569643-02cc86e2-59d9-40c6-8207-570dee29b8db.mp4
 
 ## Building from Source
 This is a typical cmake project, you can clone the repo, create a build folder inside and `cmake .. && make` which will create a `ttedit` executable inside `src/` folder within your build folder.
