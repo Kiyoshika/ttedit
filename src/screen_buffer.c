@@ -1,6 +1,7 @@
 #include "screen_buffer.h"
 #include "window.h"
 #include "cursor.h"
+#include "color_schemes.h"
 
 // NOTE: keep this list sorted so we can perform a bsearch()
 // for better performance
@@ -93,9 +94,9 @@ static void screen_print_token(
 {
 	// note: colour pairs are defined in main.c setup
 	if (bsearch(current_token, KEYWORD_LIST, N_KEYWORDS, MAX_KEYWORD_LEN, &cmp))
-		attron(COLOR_PAIR(2));
+		attron(COLOR_PAIR(SCHEME_KEYWORD));
 	printw("%s", current_token);
-	attron(COLOR_PAIR(1));
+	attron(COLOR_PAIR(SCHEME_REGULAR));
 }
 
 static void screen_print_line(
@@ -147,12 +148,14 @@ void screen_draw(
 		// print line numbers dynamically according to their size
 		if (i < screen->max_occupied_line)
 		{
+			attron(COLOR_PAIR(SCHEME_LINE_NUMBER));
 			sprintf(number, "%ld", i + 1);
 			size_t bound = cursor->line_num_size - strlen(number);
 			for (size_t i = 1; i < bound; ++i)
 				printw(" ");
 			printw("%s", number);
 			memset(number, 0, 10);
+			attron(COLOR_PAIR(SCHEME_REGULAR));
 		}
 
 		if (strlen(screen->lines[i]) == 0 && i < screen->max_occupied_line)

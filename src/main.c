@@ -1,6 +1,7 @@
 #include <ncurses.h>
 #include <stdio.h>
 #include <signal.h>
+#include "color_schemes.h"
 #include "window.h"
 #include "cursor.h"
 #include "screen_buffer.h"
@@ -72,9 +73,10 @@ int main(int argc, char* argv[])
 	if (has_colors())
 	{
 		start_color();
-		init_pair(1, COLOR_WHITE, COLOR_BLACK);
-		init_pair(2, COLOR_BLUE, COLOR_BLACK);
-		attron(COLOR_PAIR(1));
+		init_pair(SCHEME_REGULAR, COLOR_WHITE, COLOR_BLACK);
+		init_pair(SCHEME_KEYWORD, COLOR_BLUE, COLOR_BLACK);
+		init_pair(SCHEME_LINE_NUMBER, COLOR_YELLOW, COLOR_BLACK);
+		attron(COLOR_PAIR(SCHEME_REGULAR));
 	}
 
 	// TODO: create an app_t struct that wraps the window, screen and cursor together
