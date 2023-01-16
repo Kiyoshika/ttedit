@@ -11,6 +11,7 @@
 #include <stdbool.h>
 
 #define LINE_BUFF_SIZE 256
+#define DOUBLE_LINE_BUFF_SIZE LINE_BUFF_SIZE * 2
 
 // forward declarations
 struct window_t;
