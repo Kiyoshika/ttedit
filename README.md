@@ -10,6 +10,9 @@ This project is still extremely young and pretty buggy, it's more so an experime
 * There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
 * `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
 
+## Demo Video (as of 15 January 2023)
+https://user-images.githubusercontent.com/49159969/212579934-af2711a8-16fd-4d13-8bde-a491482d73c9.mp4
+
 ## How to Use
 Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.
 

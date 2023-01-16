@@ -2,6 +2,49 @@
 #include "window.h"
 #include "cursor.h"
 
+// NOTE: keep this list sorted so we can perform a bsearch()
+// for better performance
+// TODO: have a configuration file for this so we can support arbitrary languages
+#define N_KEYWORDS 35
+#define MAX_KEYWORD_LEN 20
+static char KEYWORD_LIST[N_KEYWORDS][MAX_KEYWORD_LEN] = {
+	"#define",
+	"#include",
+	"break",
+	"case",
+	"char",
+	"const",
+	"double",
+	"else",
+	"enum",
+	"for",
+	"float",
+	"goto",
+	"if",
+	"int",
+	"int8_t",
+	"int16_t",
+	"int32_t",
+	"int64_t",
+	"long",
+	"register",
+	"return",
+	"short",
+	"sizeof",
+	"size_t",
+	"static",
+	"struct",
+	"switch",
+	"uint8_t",
+	"uint16_t",
+	"uint32_t",
+	"uint64_t",
+	"union",
+	"void",
+	"volatile",
+	"while"
+};
+
 int8_t screen_init(
 		struct screen_buffer_t* const screen,
 		const struct window_t* const window)
@@ -16,6 +59,76 @@ int8_t screen_init(
 	if (!screen->lines)
 		return -1;
 	return 0;
+}
+
+void _tokenize_line(
+		const char* line,
+		char (*tokens)[DOUBLE_LINE_BUFF_SIZE],
+		size_t* n_tokens)
+{
+	size_t token_buff_idx = 0;
+	for (size_t i = 0; i < strlen(line); ++i)
+	{
+		// underscore and # is a special case where we don't want to tokenize it
+		if ((line[i] == ' ' || ispunct(line[i])) && line[i] != '_' && line[i] != '#')
+		{
+			(*tokens)[token_buff_idx++] = '\0';
+			(*n_tokens)++;
+			(*tokens)[token_buff_idx++] = line[i];
+			(*tokens)[token_buff_idx++] = '\0';
+			(*n_tokens)++;
+		}
+		else if (isalnum(line[i]) || line[i] == '_' || line[i] == '#')
+			(*tokens)[token_buff_idx++] = line[i];
+	}
+}
+
+static int cmp(const void* a, const void* b)
+{
+	return strcmp((const char*)a, (const char*)b);
+}
+
+static void screen_print_token(
+		const char* current_token)
+{
+	// note: colour pairs are defined in main.c setup
+	if (bsearch(current_token, KEYWORD_LIST, N_KEYWORDS, MAX_KEYWORD_LEN, &cmp))
+		attron(COLOR_PAIR(2));
+	printw("%s", current_token);
+	attron(COLOR_PAIR(1));
+}
+
+static void screen_print_line(
+		const struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor,
+		const size_t line_num)
+{
+	char tokens[DOUBLE_LINE_BUFF_SIZE] = {0};
+	char current_token[DOUBLE_LINE_BUFF_SIZE] = {0};
+	size_t n_tokens = 0;
+	size_t token_buff_idx = 0;
+	size_t current_buff_idx = 0;
+	_tokenize_line(screen->lines[line_num], &tokens, &n_tokens);
+	for (size_t i = 0; i < n_tokens; ++i)
+	{
+		for (; token_buff_idx < DOUBLE_LINE_BUFF_SIZE; ++token_buff_idx)
+		{
+			if (tokens[token_buff_idx] == '\0')
+			{
+				screen_print_token(current_token);
+				memset(current_token, 0, DOUBLE_LINE_BUFF_SIZE);
+				current_buff_idx = 0;
+				continue;
+			}
+			else
+				current_token[current_buff_idx++] = tokens[token_buff_idx];
+		}
+	}
+
+	// special case where we haven't written a full token yet
+	// (without this, the first text you write doesn't render)
+	if (n_tokens == 0)
+		printw("%s", tokens);
 }
 
 void screen_draw(
@@ -49,7 +162,7 @@ void screen_draw(
 		else
 		{
 			move(buffer_idx, cursor->line_num_size + 1);
-			printw("%s", screen->lines[i]);
+			screen_print_line(screen, cursor, i);
 		}
 
 		buffer_idx++;
