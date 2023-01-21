@@ -62,25 +62,102 @@ int8_t screen_init(
 	return 0;
 }
 
+// tokenise a particular string [token_str] compared
+// to tokenizing single characters
+static void _tokenize_string(
+		const char* line,
+		char (*tokens)[DOUBLE_LINE_BUFF_SIZE],
+		size_t* n_tokens,
+		size_t* token_buff_len,
+		size_t* token_buff_idx,
+		const char* token_str,
+		size_t* token_idx)
+{
+	size_t token_str_len = strlen(token_str);
+
+	if (*token_idx + token_str_len <= strlen(line) 
+			&& strncmp(&line[*token_idx], token_str, token_str_len) == 0)
+	{
+		for (size_t idx = 0; idx < token_str_len; ++idx)
+		{
+			(*tokens)[(*token_buff_idx)++] = token_str[idx];
+			(*token_buff_len)++;
+			(*token_idx)++;
+		}
+		(*tokens)[(*token_buff_idx)++] = '\0';
+		(*token_buff_len)++;
+
+		(*n_tokens)++;
+	}
+}
+
 void _tokenize_line(
 		const char* line,
 		char (*tokens)[DOUBLE_LINE_BUFF_SIZE],
-		size_t* n_tokens)
+		size_t* n_tokens,
+		size_t* token_buff_len)
 {
+	// NOTE: for now I'm hardcoding the single/multi line comment tokens,
+	// but later these could be read from a config file to support multiple languages
 	size_t token_buff_idx = 0;
+
 	for (size_t i = 0; i < strlen(line); ++i)
 	{
-		// underscore and # is a special case where we don't want to tokenize it
-		if ((line[i] == ' ' || ispunct(line[i])) && line[i] != '_' && line[i] != '#')
+		// SINGLE COMMENT
+		_tokenize_string(
+				line,
+				tokens,
+				n_tokens,
+				token_buff_len,
+				&token_buff_idx,
+				"//",
+				&i);
+
+		// MULTI COMMENT (begin)
+		_tokenize_string(
+				line,
+				tokens,
+				n_tokens,
+				token_buff_len,
+				&token_buff_idx,
+				"/*",
+				&i);
+		
+		// MULTI COMMENT (end)
+		_tokenize_string(
+				line,
+				tokens,
+				n_tokens,
+				token_buff_len,
+				&token_buff_idx,
+				"*/",
+				&i);
+
+		// always tokenise on spaces and punctuation (except for some special cases)
+		if (line[i] == ' ' || 
+				(ispunct(line[i]) && line[i] != '_' && line[i] != '#'))
 		{
-			(*tokens)[token_buff_idx++] = '\0';
-			(*n_tokens)++;
+			// only write a null terminator at beginning if we
+			// have some written text before the space. for example,
+			// if we have a comment, those already append a null terminator
+			if (token_buff_idx > 0
+				&& (*tokens)[token_buff_idx - 1] != '\0')
+			{
+				(*tokens)[token_buff_idx++] = '\0';
+				(*n_tokens)++;
+				(*token_buff_len)++;
+			}
 			(*tokens)[token_buff_idx++] = line[i];
 			(*tokens)[token_buff_idx++] = '\0';
 			(*n_tokens)++;
+			(*token_buff_len) += 2;
 		}
-		else if (isalnum(line[i]) || line[i] == '_' || line[i] == '#')
+		// everything else
+		else if (isalnum(line[i]) || ispunct(line[i])) 
+		{
 			(*tokens)[token_buff_idx++] = line[i];
+			(*token_buff_len)++;
+		}
 	}
 }
 
@@ -90,33 +167,91 @@ static int cmp(const void* a, const void* b)
 }
 
 static void screen_print_token(
-		const char* current_token)
+		const char* current_token,
+		bool* inside_single_comment,
+		bool* inside_multi_comment,
+		bool* inside_single_quote,
+		bool* inside_double_quote)
 {
 	// note: colour pairs are defined in main.c setup
-	if (bsearch(current_token, KEYWORD_LIST, N_KEYWORDS, MAX_KEYWORD_LEN, &cmp))
+	
+	// COLOUR KEYWORD
+	if (!*inside_single_comment
+			&& !*inside_multi_comment
+			&& !*inside_single_quote
+			&& !*inside_double_quote
+			&& bsearch(current_token, KEYWORD_LIST, N_KEYWORDS, MAX_KEYWORD_LEN, &cmp))
 		attron(COLOR_PAIR(SCHEME_KEYWORD));
+
+	// COLOUR COMMENTS AND QUOTES
+	// TODO: generalise this later for future languages - for now I'm just hardcoding them
+	else if (strncmp(current_token, "//", 2) == 0)
+		*inside_single_comment = true;
+	else if (strncmp(current_token, "/*", 2) == 0)
+		*inside_multi_comment = true;
+	else if (strncmp(current_token, "*/", 2) == 0)
+	{
+		// we still want to highlight the closing comment with comment colour
+		*inside_multi_comment = false;
+		attron(COLOR_PAIR(SCHEME_COMMENT));
+	}
+	else if (strncmp(current_token, "\'", 1) == 0)
+	{
+		// we still want to highlight the closing quote with quote colour 
+		*inside_single_quote = !*inside_single_quote;
+		attron(COLOR_PAIR(SCHEME_QUOTE));
+	}
+	else if (strncmp(current_token, "\"", 1) == 0)
+	{
+		// we still want to highlight the closing quote with quote colour 
+		*inside_double_quote = !*inside_double_quote;
+		attron(COLOR_PAIR(SCHEME_QUOTE));
+	}
+
+	// comments have higher precedence (e.g., if you have quotes inside a comment,
+	// we don't want to mix colours around
+	if (*inside_single_comment 
+			|| *inside_multi_comment)
+		attron(COLOR_PAIR(SCHEME_COMMENT));
+	else if (*inside_single_quote
+			|| *inside_double_quote)
+		attron(COLOR_PAIR(SCHEME_QUOTE));
+
 	printw("%s", current_token);
+
 	attron(COLOR_PAIR(SCHEME_REGULAR));
 }
 
 static void screen_print_line(
 		const struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor,
-		const size_t line_num)
+		const size_t line_num,
+		bool* inside_single_comment,
+		bool* inside_multi_comment,
+		bool* inside_single_quote,
+		bool* inside_double_quote)
 {
 	char tokens[DOUBLE_LINE_BUFF_SIZE] = {0};
 	char current_token[DOUBLE_LINE_BUFF_SIZE] = {0};
 	size_t n_tokens = 0;
 	size_t token_buff_idx = 0;
 	size_t current_buff_idx = 0;
-	_tokenize_line(screen->lines[line_num], &tokens, &n_tokens);
+	size_t token_buff_len = 0;
+
+	_tokenize_line(screen->lines[line_num], &tokens, &n_tokens, &token_buff_len);
+
 	for (size_t i = 0; i < n_tokens; ++i)
 	{
-		for (; token_buff_idx < DOUBLE_LINE_BUFF_SIZE; ++token_buff_idx)
+		for (; token_buff_idx < token_buff_len + 1; ++token_buff_idx)
 		{
 			if (tokens[token_buff_idx] == '\0')
 			{
-				screen_print_token(current_token);
+				screen_print_token(
+						current_token, 
+						inside_single_comment, 
+						inside_multi_comment,
+						inside_single_quote,
+						inside_double_quote);
 				memset(current_token, 0, DOUBLE_LINE_BUFF_SIZE);
 				current_buff_idx = 0;
 				continue;
@@ -140,8 +275,18 @@ void screen_draw(
 	char number[10] = {0};
 	cursor->line_num_size = log10(screen->max_occupied_line) + 1;
 
+	bool inside_single_comment = false;
+	bool inside_multi_comment = false;
+	bool inside_single_quote = false;
+	bool inside_double_quote = false;
+
 	for (size_t i = screen->start_idx; i < screen->end_idx - 1; ++i)
 	{
+		if (inside_multi_comment)
+			attron(COLOR_PAIR(SCHEME_COMMENT));
+		else
+			attron(COLOR_PAIR(SCHEME_REGULAR));
+
 		move(buffer_idx, 0);
 		clrtoeol();
 		
@@ -158,17 +303,27 @@ void screen_draw(
 			attron(COLOR_PAIR(SCHEME_REGULAR));
 		}
 
-		if (strlen(screen->lines[i]) == 0 && i < screen->max_occupied_line)
-			printw("");
-		else if (i >= screen->max_occupied_line)
+		if (i >= screen->max_occupied_line)
+		{
+			attron(COLOR_PAIR(SCHEME_REGULAR));
 			printw("~");
+		}
 		else
 		{
 			move(buffer_idx, cursor->line_num_size + 1);
-			screen_print_line(screen, cursor, i);
+			screen_print_line(
+					screen, 
+					cursor, 
+					i,
+					&inside_single_comment,
+					&inside_multi_comment,
+					&inside_single_quote,
+					&inside_double_quote);
 		}
 
 		buffer_idx++;
+		// at the end of a line, we don't want to highlight single comments on the next line
+		inside_single_comment = false;
 	}
 
 	// restore original cursor position

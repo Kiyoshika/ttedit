@@ -76,7 +76,11 @@ int main(int argc, char* argv[])
 		init_pair(SCHEME_REGULAR, COLOR_WHITE, COLOR_BLACK);
 		init_pair(SCHEME_KEYWORD, COLOR_CYAN, COLOR_BLACK);
 		init_pair(SCHEME_LINE_NUMBER, COLOR_YELLOW, COLOR_BLACK);
-		attron(COLOR_PAIR(SCHEME_REGULAR));
+		// for now comment and quotes will have the same scheme,
+		// but eventually when we can let users customise them, they
+		// can change if wanted
+		init_pair(SCHEME_QUOTE, COLOR_GREEN, COLOR_BLACK);
+		init_pair(SCHEME_COMMENT, COLOR_GREEN, COLOR_BLACK);
 	}
 
 	// TODO: create an app_t struct that wraps the window, screen and cursor together
