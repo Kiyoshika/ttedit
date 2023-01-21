@@ -220,9 +220,10 @@ bool screen_read_file(
 		struct screen_buffer_t* const screen,
 		const char* filename)
 {
-	FILE* ifile = fopen(filename, "ab+");
+	// attempt to append file - if it doesn't exist, create one in write mode
+	FILE* ifile = fopen(filename, "a+");
 	if (!ifile)
-		return false;
+		ifile = fopen(filename, "w+");
 
 	char current_buffer[LINE_BUFF_SIZE] = {0};
 	size_t current_line = 0;
