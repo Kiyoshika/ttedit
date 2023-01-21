@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 	{
 		start_color();
 		init_pair(SCHEME_REGULAR, COLOR_WHITE, COLOR_BLACK);
-		init_pair(SCHEME_KEYWORD, COLOR_BLUE, COLOR_BLACK);
+		init_pair(SCHEME_KEYWORD, COLOR_CYAN, COLOR_BLACK);
 		init_pair(SCHEME_LINE_NUMBER, COLOR_YELLOW, COLOR_BLACK);
 		attron(COLOR_PAIR(SCHEME_REGULAR));
 	}
