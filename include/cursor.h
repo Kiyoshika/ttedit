@@ -86,4 +86,10 @@ void cursor_jump_word_backward(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen);
 
+// jump scopes from { to } or ( to ) and vice versa
+void cursor_jump_scope(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen,
+		const char jump_char);
+
 #endif

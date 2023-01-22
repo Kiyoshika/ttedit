@@ -45,3 +45,4 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `{X}j` (jump) - jump to line `X` (e.g., `23j` will jump to line 23)
 * `w` (word) - jump forward one word
 * `shift + w` (word) - jump backward one word
+* `shift + j` (jump) - jump forward/backward a scope: `{` to `}` or `(` to `)` and vice versa.

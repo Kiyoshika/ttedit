@@ -306,3 +306,79 @@ void cursor_jump_word_backward(
 		column = strlen(screen->lines[row]);
 	}
 }
+
+void cursor_jump_scope(
+		struct cursor_t* const cursor,
+		struct screen_buffer_t* const screen,
+		const char jump_char)
+{
+	char search_char = 0;
+	// search direction:
+	// 1 = forward (finding closing scope)
+	// -1 = backward (finding opening scope)
+	
+	ssize_t search_dir = 1;
+
+	// find the character to search for depending on the jump_char
+	switch (jump_char)
+	{
+		case '{':
+			search_char = '}';
+			break;
+		case '}':
+			search_char = '{';
+			search_dir = -1;
+			break;
+		case '(':
+			search_char = ')';
+			break;
+		case ')':
+			search_char = '(';
+			search_dir = -1;
+			break;
+		// jumping scopes is not valid for characters not listed above
+		default:
+			return;
+	}
+
+	for (size_t row = cursor->row; row < screen->max_occupied_line; row += search_dir)
+	{
+		for (size_t column = 0; column < strlen(screen->lines[row]) + cursor->line_num_size; column++)
+		{
+			// TODO: move the cursor scrolling logic to a utility function.
+			// this can be used in other places since I feel like I've implemented
+			// this in three different ways by now...
+			if (screen->lines[row][column] == search_char)
+			{
+				// NOTE: the +2 is to account for "lines" being 1-indexed and
+				// the bottom line is inaccessible (used to display edit mode)
+				if (row > screen->end_idx)
+				{
+					screen->end_idx = row + 2;
+					screen->start_idx = screen->end_idx - screen->max_rows;
+					screen->current_line = screen->max_rows - 2;
+				}
+				else if (row < screen->start_idx)
+				{
+					screen->start_idx = row;
+					screen->end_idx = screen->start_idx + screen->max_rows;
+					screen->current_line = 0;
+				}
+				else
+				{
+					if (cursor->row > row)
+						screen->current_line -= (cursor->row - row);
+					else
+						screen->current_line += (row - cursor->row);
+				}
+
+				cursor->row = row;
+				cursor->column = column;
+
+				move(screen->current_line, cursor->column + cursor->line_num_size + 1);
+				screen_draw(screen, cursor);
+				return;
+			}
+		}
+	}
+}

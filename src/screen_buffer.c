@@ -373,6 +373,7 @@ void screen_free(
 
 bool screen_read_file(
 		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor,
 		const char* filename)
 {
 	// attempt to read file
@@ -408,7 +409,7 @@ bool screen_read_file(
 			screen->max_occupied_line++;
 			memset(current_buffer, 0, LINE_BUFF_SIZE);
 		}
-
+		cursor->line_num_size = log10(screen->max_occupied_line) + 1;
 		fclose(ifile);
 	}
 	// otherwise, create new blank file
