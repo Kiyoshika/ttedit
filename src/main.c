@@ -93,7 +93,11 @@ int main(int argc, char* argv[])
 
 	struct screen_buffer_t screen;
 	screen_init(&screen, &window);
-	if (!screen_read_file(&screen, filename))
+	
+	struct command_buffer_t command;
+	command_init(&command);
+
+	if (!screen_read_file(&screen, &cursor, filename))
 	{
 		fprintf(stderr, "There was a problem opening the file.\n");
 		screen_free(&screen);
@@ -102,8 +106,6 @@ int main(int argc, char* argv[])
 	}
 	screen_draw(&screen, &cursor);
 
-	struct command_buffer_t command;
-	command_init(&command);
 
 	enum mode_e mode = VISUAL;
 
@@ -114,6 +116,13 @@ int main(int argc, char* argv[])
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// JUMP SCOPES
+			case 'J':
+				if (mode == VISUAL)
+					cursor_jump_scope(&cursor, &screen, screen.lines[cursor.row][cursor.column]);
+				else
+					goto writekey;
+				break;
 			// WRITE CONTENTS TO FILE
 			case 's':
 				if (mode == VISUAL)

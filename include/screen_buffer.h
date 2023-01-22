@@ -69,6 +69,7 @@ void screen_free(
 // (used when first opening ttedit)
 bool screen_read_file(
 		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor,
 		const char* filename);
 
 // write the contents (lines) to the output file
