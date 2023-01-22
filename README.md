@@ -26,18 +26,23 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `ESC` - go back to VISUAL mode
 
 ### Visual Mode Commands
+#### Misc
 * `ESC` - clear the command buffer (e.g., if you started typing a number to jump lines but want to cancel, you can press `ESC` to clear the buffer and write a different number)
 * `i` (insert) - enter EDIT mode
+#### Cursor
 * `h` - move cursor left
 * `l` - move cursor right
 * `k` - move cursor up
 * `j` - move cursor down
+#### File IO
 * `s` (save) - Save the contents of the buffer into the file
 * `q` (quit) - Exit the editor without saving (WARNING, IT WILL NOT ASK YOU IF YOU WANT TO SAVE FIRST AFTER MAKING CHANGES)
+#### Editing
 * `p` (prepend) - move to first non-space character and toggle EDIT mode
 * `a` (append) - move to end of buffer and toggle EDIT mode
 * `d` (delete) - delete the current line
 * `n` (newline) - create new line under cursor and jump to it in EDIT mode
+#### Navigation
 * `b` (bottom) - jump to bottom of visual buffer (no scrolling)
 * `shift + b` (bottom) - jump to bottom of entire buffer (scrolling if needed)
 * `t` (top) - jump to top of visual buffer (no scrolling)
