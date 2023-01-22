@@ -44,8 +44,6 @@ void command_execute(
 	{
 		case 'j': // line jumps
 		{
-			// TODO: if command buffer is empty, take the cursor char and if it's
-			// a {} or () then jump to the end/beginning brace/bracket
 			char* endptr = NULL;
 			uint32_t line_num = strtoul(command->buffer, &endptr, 10);
 			// if command buffer contains noise, just ignore it
