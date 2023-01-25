@@ -7,5 +7,6 @@
 #define SCHEME_LINE_NUMBER 4
 #define SCHEME_QUOTE 5
 #define SCHEME_COMMENT 6
+#define SCHEME_HIGHLIGHT 7
 
 #endif

@@ -10,6 +10,9 @@
 #include <math.h>
 #include <stdbool.h>
 
+#define min(a, b) a < b ? a : b
+#define max(a, b) a > b ? a : b
+
 #define LINE_BUFF_SIZE 256
 #define DOUBLE_LINE_BUFF_SIZE LINE_BUFF_SIZE * 2
 

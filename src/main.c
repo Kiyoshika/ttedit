@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 		init_pair(SCHEME_REGULAR, COLOR_WHITE, COLOR_BLACK);
 		init_pair(SCHEME_KEYWORD, COLOR_CYAN, COLOR_BLACK);
 		init_pair(SCHEME_LINE_NUMBER, COLOR_YELLOW, COLOR_BLACK);
+		init_pair(SCHEME_HIGHLIGHT, COLOR_BLACK, COLOR_WHITE);
 		// for now comment and quotes will have the same scheme,
 		// but eventually when we can let users customise them, they
 		// can change if wanted
@@ -116,6 +117,16 @@ int main(int argc, char* argv[])
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// HIGHLIGHT TEXT
+			case 'H':
+				if (mode == VISUAL)
+				{
+					cursor_toggle_highlight(&cursor);
+					screen_draw(&screen, &cursor);
+				}
+				else
+					goto writekey;
+				break;
 			// JUMP SCOPES
 			case 'J':
 				if (mode == VISUAL)

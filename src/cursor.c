@@ -7,6 +7,10 @@ void cursor_init(
 	cursor->row = 0;
 	cursor->column = 0;
 	cursor->line_num_size = 2;
+
+	cursor->highlight_mode = false;
+	cursor->highlight_row = 0;
+	cursor->highlight_column = 0;
 }
 
 void cursor_move_down(
@@ -31,6 +35,9 @@ void cursor_move_down(
 
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
+
+	if (cursor->highlight_mode)
+		screen_draw(screen, cursor);
 }
 
 void cursor_move_up(
@@ -51,6 +58,9 @@ void cursor_move_up(
 
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
+
+	if (cursor->highlight_mode)
+		screen_draw(screen, cursor);
 }
 
 void cursor_move_left(
@@ -62,6 +72,9 @@ void cursor_move_left(
 
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
+
+	if (cursor->highlight_mode)
+		screen_draw(screen, cursor);
 }
 
 void cursor_move_right(
@@ -73,6 +86,9 @@ void cursor_move_right(
 
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
+
+	if (cursor->highlight_mode)
+		screen_draw(screen, cursor);
 }
 
 void cursor_prepend_line(
@@ -380,5 +396,16 @@ void cursor_jump_scope(
 				return;
 			}
 		}
+	}
+}
+
+void cursor_toggle_highlight(
+		struct cursor_t* const cursor)
+{
+	cursor->highlight_mode = !cursor->highlight_mode;
+	if (cursor->highlight_mode)
+	{
+		cursor->highlight_row = cursor->row;
+		cursor->highlight_column = cursor->column;
 	}
 }

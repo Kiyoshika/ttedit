@@ -267,6 +267,100 @@ static void screen_print_line(
 		printw("%s", tokens);
 }
 
+void _highlight_text(
+		const struct screen_buffer_t* const screen,
+		const struct cursor_t* const cursor)
+{
+	attron(COLOR_PAIR(SCHEME_HIGHLIGHT));
+
+	const size_t offset = cursor->line_num_size + 1;
+
+	// start first row relative to cursor
+	if (cursor->row == cursor->highlight_row)
+	{
+		size_t start_idx = min(cursor->column, cursor->highlight_column);
+		size_t end_idx = max(cursor->column, cursor->highlight_column);
+
+		for (size_t c = start_idx; c <= end_idx; ++c)
+		{
+			move(screen->current_line, c + offset);
+			printw("%c", screen->lines[cursor->row][c]);
+		}
+		
+	}
+	else if (cursor->row > cursor->highlight_row)
+	{
+		size_t start_row = cursor->highlight_row;
+		size_t end_row = cursor->row;
+
+		// have to do some offset math when choosing the row to handle
+		// scrolling properly.
+		//
+		// FORMULA: max_rows - (end_idx - desired_row)
+		// e.g.,: 50 - (75 - 64) = 50 - 11 = 39
+
+		// for first row, highlight from column to end of line
+		for (size_t c = cursor->highlight_column; c < strlen(screen->lines[start_row]); ++c)
+		{
+			size_t display_row;
+			if (screen->end_idx - start_row > screen->max_rows)
+				display_row = 0;
+			else
+				display_row = screen->max_rows - (screen->end_idx - start_row);
+
+			move(display_row, c + offset);
+			// TODO: fix this so the top line displays correct row while scrolling down
+			printw("%c", screen->lines[start_row][c]);
+		}
+
+		// for all rows in between highlight entire line
+		for (size_t r = start_row + 1; r < end_row; ++r)
+		{
+			move(screen->max_rows - (screen->end_idx - r), 0 + offset);
+			printw("%s", screen->lines[r]);
+		}
+		
+		// for last row, highlight from beginning of line to current cursor
+		for (size_t c = 0; c <= cursor->column; ++c)
+		{
+			move(screen->max_rows - (screen->end_idx - end_row), c + offset);
+			printw("%c", screen->lines[end_row][c]);
+		}
+	}
+	else if (cursor->highlight_row > cursor->row)
+	{
+		size_t start_row = cursor->row;
+		size_t end_row = cursor->highlight_row;
+
+		// for last row, highlight from beginning of line to highlight cursor
+		// TODO: fix this so the bottom line displays correct row while scrolling up
+		for (size_t c = 0; c <= cursor->highlight_column; ++c)
+		{
+			move(screen->current_line + (end_row - start_row), c + offset);
+			printw("%c", screen->lines[end_row][c]);
+		}
+
+		// for all rows in between highlight entire line
+		for (size_t r = end_row; r --> start_row + 1;)
+		{
+			move(screen->current_line + (end_row - r), 0 + offset);
+			printw("%s", screen->lines[start_row + end_row - r]);
+		}
+
+		// for first row, highlight from cursor to end of line
+		for (size_t c = cursor->column; c < strlen(screen->lines[start_row]); ++c)
+		{
+			move(screen->current_line, c + offset);
+			printw("%c", screen->lines[start_row][c]);
+		}
+		
+	}
+
+	refresh();
+
+	attron(COLOR_PAIR(SCHEME_REGULAR));
+}
+
 void screen_draw(
 		const struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor)
@@ -325,6 +419,10 @@ void screen_draw(
 		// at the end of a line, we don't want to highlight single comments on the next line
 		inside_single_comment = false;
 	}
+
+	// if highlighting cursor, repaint region with SCHEME_HIGHLIGHT
+	if (cursor->highlight_mode)
+		_highlight_text(screen, cursor);
 
 	// restore original cursor position
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
