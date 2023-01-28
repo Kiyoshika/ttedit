@@ -267,85 +267,174 @@ static void screen_print_line(
 		printw("%s", tokens);
 }
 
+void _highlight_single_line(
+		const struct screen_buffer_t* const screen,
+		const struct cursor_t* const cursor)
+{
+	const size_t offset = cursor->line_num_size + 1;
+	size_t start_idx = min(cursor->column, cursor->highlight_column);
+	size_t end_idx = max(cursor->column, cursor->highlight_column);
+
+	for (size_t c = start_idx; c <= end_idx; ++c)
+	{
+		move(screen->current_line, c + offset);
+		printw("%c", screen->lines[cursor->row][c]);
+	}
+}
+
+void _highlight_cell(
+		const struct cursor_t* const cursor,
+		const size_t row,
+		const size_t column,
+		const char* const current_line)
+{
+	move(row, column + cursor->line_num_size + 1);
+	if (strlen(current_line) == 0)
+		printw("%c", ' ');
+	else
+		printw("%c", current_line[column]);
+}
+
+void _highlight_line(
+		const struct cursor_t* const cursor,
+		const size_t row,
+		const size_t column,
+		const char* const current_line)
+{
+	move(row, column + cursor->line_num_size + 1);
+	if (strlen(current_line) == 0)
+		printw("%c", ' ');
+	else
+		printw("%s", current_line);
+}
+
+// highlight text moving cursor downwards from where you started highlighting
+void _highlight_downwards_buffer(
+		const struct screen_buffer_t* const screen,
+		const struct cursor_t* const cursor)
+{
+	const size_t row_offset = screen->end_idx - screen->max_rows;
+
+	// if highlight_row is within visible frame, then we highlight
+	// from the cursor to end of line for the first line, full lines in between,
+	// and up to highlight_cursor for last line
+	if (cursor->highlight_row >= screen->start_idx
+			&& cursor->highlight_row <= screen->end_idx)
+	{
+		// first row
+		for (size_t c = cursor->highlight_column; c < strlen(screen->lines[cursor->highlight_row]); ++c)
+			_highlight_cell(
+					cursor,
+					cursor->highlight_row - row_offset, 
+					c, 
+					screen->lines[cursor->highlight_row]);
+
+		// in-between rows
+		for (size_t r = cursor->highlight_row + 1; r < cursor->row; ++r)
+			_highlight_line(
+					cursor,
+					cursor->highlight_row + (r - cursor->highlight_row) - row_offset,
+					0,
+					screen->lines[r]);
+
+		// last row
+		for (size_t c = 0; c < cursor->column; ++c)
+			_highlight_cell(
+					cursor,
+					cursor->row - row_offset,
+					c,
+					screen->lines[cursor->row]);
+
+	}
+	// if highlight_row is OUTSIDE of visible frame, highlight everything up to cursor
+	else
+	{
+		for (size_t row = screen->start_idx; row < cursor->row; ++row)
+			_highlight_line(
+					cursor,
+					row - screen->start_idx,
+					0,
+					screen->lines[row]);
+
+		for (size_t c = 0; c < cursor->column; ++c)
+			_highlight_cell(
+					cursor,
+					cursor->row - row_offset,
+					c,
+					screen->lines[cursor->row]);
+	}
+}
+
+// highlight text moving cursor downwards from where you started highlighting
+void _highlight_upwards_buffer(
+		const struct screen_buffer_t* const screen,
+		const struct cursor_t* const cursor)
+{
+	const size_t row_offset = screen->end_idx - screen->max_rows;
+
+	// if highlight_row is within visible frame, then we highlight
+	// from the cursor to end of line for the first line, full lines in between,
+	// and up to highlight_cursor for last line
+	if (cursor->highlight_row >= screen->start_idx
+			&& cursor->highlight_row < screen->end_idx - 1)
+	{
+		// first row
+		for (size_t c = cursor->column; c < strlen(screen->lines[cursor->row]); ++c)
+			_highlight_cell(
+					cursor,
+					cursor->row - row_offset,
+					c,
+					screen->lines[cursor->row]);
+
+		// in-between rows
+		for (size_t r = cursor->highlight_row; r --> cursor->row + 1;)
+			_highlight_line(
+					cursor,
+					cursor->highlight_row + (r - cursor->highlight_row) - row_offset,
+					0,
+					screen->lines[r]);
+
+		// last row
+		for (size_t c = 0; c <= cursor->highlight_column; ++c)
+			_highlight_cell(
+					cursor,
+					cursor->highlight_row - row_offset,
+					c,
+					screen->lines[cursor->highlight_row]);
+
+	}
+	// if highlight_row is OUTSIDE of visible frame, highlight everything up to cursor
+	else
+	{
+		for (size_t c = cursor->column; c < strlen(screen->lines[cursor->row]); ++c)
+			_highlight_cell(
+					cursor,
+					cursor->row - row_offset,
+					c,
+					screen->lines[cursor->row]);
+
+		for (size_t row = screen->end_idx - 1; row --> cursor->row + 1;)
+			_highlight_line(
+					cursor,
+					row - row_offset,
+					0,
+					screen->lines[row]);
+	}
+}
+
 void _highlight_text(
 		const struct screen_buffer_t* const screen,
 		const struct cursor_t* const cursor)
 {
-	// TODO: break these conditions into their own functions because this
-	// unexpectedly became very long
 	attron(COLOR_PAIR(SCHEME_HIGHLIGHT));
-
-	const size_t offset = cursor->line_num_size + 1;
-	const size_t row_offset = screen->end_idx - screen->max_rows;
 
 	// start first row relative to cursor
 	if (cursor->row == cursor->highlight_row)
-	{
-		size_t start_idx = min(cursor->column, cursor->highlight_column);
-		size_t end_idx = max(cursor->column, cursor->highlight_column);
-
-		for (size_t c = start_idx; c <= end_idx; ++c)
-		{
-			move(screen->current_line, c + offset);
-			printw("%c", screen->lines[cursor->row][c]);
-		}
-		
-	}
+		_highlight_single_line(screen, cursor);
 	else if (cursor->row > cursor->highlight_row)
-	{
-		size_t start_row = cursor->highlight_row;
-		size_t end_row = cursor->row;
-
-		
-		// if highlight_row is within visible frame, then we highlight
-		// from the cursor to end of line for the first line, full lines in between,
-		// and up to highlight_cursor for last line
-		if (cursor->highlight_row >= screen->start_idx
-				&& cursor->highlight_row <= screen->end_idx)
-		{
-			// first row
-			for (size_t c = cursor->highlight_column; c < strlen(screen->lines[cursor->highlight_row]); ++c)
-			{
-				move(cursor->highlight_row - row_offset, c + offset);
-				printw("%c", screen->lines[cursor->highlight_row][c]);
-			}
-
-			// in-between rows
-			for (size_t r = cursor->highlight_row + 1; r < cursor->row; ++r)
-			{
-				move(cursor->highlight_row + (r - cursor->highlight_row) - row_offset, 0 + offset);
-				printw("%s", screen->lines[r]);
-			}
-
-			// last row
-			for (size_t c = 0; c < cursor->column; ++c)
-			{
-				move(cursor->row - row_offset, c + offset);
-				printw("%c", screen->lines[cursor->row][c]);
-			}
-
-		}
-		// if highlight_row is OUTSIDE of visible frame, highlight everything up to cursor
-		else
-		{
-			for (size_t row = screen->start_idx; row < cursor->row; ++row)
-			{
-				move(row - screen->start_idx, 0 + offset);
-				printw("%s", screen->lines[row]);
-			}
-
-			for (size_t c = 0; c < cursor->column; ++c)
-			{
-				move(cursor->row - row_offset, c + offset);
-				printw("%c", screen->lines[cursor->row][c]);
-			}
-		}
-
-	}
+		_highlight_downwards_buffer(screen, cursor);
 	else if (cursor->highlight_row > cursor->row)
-	{
-		// TODO: finish this
-	}
+		_highlight_upwards_buffer(screen, cursor);
 
 	refresh();
 
