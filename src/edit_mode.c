@@ -253,10 +253,10 @@ void edit_copy_buffer(
 
 	// copy last row (need to handle the cursor position appropriately)
 	if (cursor->row > cursor->highlight_row)
-		for (size_t c = 0; c < cursor->column; ++c)
+		for (size_t c = 0; c <= cursor->column; ++c)
 			strncat(copy_buffer[copied_rows], &screen->lines[end_row][c], 1);
 	else
-		for (size_t c = 0; c < cursor->highlight_column; ++c)
+		for (size_t c = 0; c <= cursor->highlight_column; ++c)
 			strncat(copy_buffer[copied_rows], &screen->lines[end_row][c], 1);
 
 	free(screen->copy_buffer);
@@ -264,5 +264,23 @@ void edit_copy_buffer(
 	screen->copy_buffer_rows = n_rows;
 
 	cursor_toggle_highlight(cursor);
+	screen_draw(screen, cursor);
+}
+
+void edit_paste_buffer(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	// on the first line, we insert the text wherever we are then insert new line
+	// for every subsequent line (if copy_buffer_rows > 1)
+	for (size_t line = 0; line < screen->copy_buffer_rows; ++line)
+	{
+		for (size_t c = 0; c < strlen(screen->copy_buffer[line]); ++c)
+			edit_write_key(screen, cursor, screen->copy_buffer[line][c]);
+
+		if (screen->copy_buffer_rows > 1)
+			edit_insert_new_line(screen, cursor, true);
+	}
+
 	screen_draw(screen, cursor);
 }

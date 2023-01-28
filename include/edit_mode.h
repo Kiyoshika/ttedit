@@ -42,4 +42,14 @@ void edit_delete_current_line(
 		struct screen_buffer_t* const screen,
 		struct cursor_t* const cursor);
 
+// take selected text and copy contents into a buffer
+void edit_copy_buffer(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor);
+
+// insert copy buffer into current cursor position
+void edit_paste_buffer(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor);
+
 #endif

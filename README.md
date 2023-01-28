@@ -42,6 +42,9 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `a` (append) - move to end of buffer and toggle EDIT mode
 * `d` (delete) - delete the current line
 * `n` (newline) - create new line under cursor and jump to it in EDIT mode
+* `shift + h` (highlight) - Start highlighting text. Press `shift + h` again or `ESC` to cancel highlighting
+* `shift + c` (copy) - Copy highlighted text
+* `shift + p` (paste) - Paste copied text at current cursor position
 #### Navigation
 * `b` (bottom) - jump to bottom of visual buffer (no scrolling)
 * `shift + b` (bottom) - jump to bottom of entire buffer (scrolling if needed)

@@ -340,7 +340,7 @@ void _highlight_downwards_buffer(
 					screen->lines[r]);
 
 		// last row
-		for (size_t c = 0; c < cursor->column; ++c)
+		for (size_t c = 0; c <= cursor->column; ++c)
 			_highlight_cell(
 					cursor,
 					cursor->row - row_offset,
@@ -547,6 +547,9 @@ void screen_scroll_down(
 void screen_free(
 		struct screen_buffer_t* screen)
 {
+	free(screen->copy_buffer);
+	screen->copy_buffer = NULL;
+
 	free(screen->lines);
 	screen->lines = NULL;
 }

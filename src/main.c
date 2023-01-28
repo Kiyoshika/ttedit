@@ -118,10 +118,17 @@ int main(int argc, char* argv[])
 		switch (key_pressed)
 		{
 			// COPY BUFFER
-			case 'c':
+			case 'C':
 				if (mode == VISUAL && cursor.highlight_mode)
 					edit_copy_buffer(&screen, &cursor);
 				else if (mode == EDIT)
+					goto writekey;
+				break;
+			// PASTE BUFFER
+			case 'P':
+				if (mode == VISUAL)
+					edit_paste_buffer(&screen, &cursor);
+				else
 					goto writekey;
 				break;
 			// HIGHLIGHT TEXT
@@ -339,7 +346,14 @@ int main(int argc, char* argv[])
 					screen_draw(&screen, &cursor);
 				}
 				else if (mode == VISUAL)
+				{
 					command_clear(&command);
+					if (cursor.highlight_mode)
+					{
+						cursor_toggle_highlight(&cursor);
+						screen_draw(&screen, &cursor);
+					}
+				}
 				break;
 
 			// JUMP FORWARD A WORD
