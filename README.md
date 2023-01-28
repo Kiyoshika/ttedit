@@ -10,8 +10,8 @@ This project is still extremely young and pretty buggy, it's more so an experime
 * There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
 * `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
 
-## Demo Video (as of 21 January 2023)
-https://user-images.githubusercontent.com/49159969/213883354-c56b8df3-70ab-4e65-aee2-7d3777185170.mp4
+## Demo Video (as of 28 January 2023)
+https://user-images.githubusercontent.com/49159969/215283220-fbedd0f8-dd7c-4204-8eee-7c8d151197a0.mp4
 
 ## How to Use
 Simply use `ttedit myfile.c` to open the editor. If file does not exist, it will create a new blank one. If file exists, it will read the contents and populate the buffer.
@@ -42,6 +42,9 @@ There are two modes, VISUAL and EDIT. VISUAL mode allows you to move the cursor 
 * `a` (append) - move to end of buffer and toggle EDIT mode
 * `d` (delete) - delete the current line
 * `n` (newline) - create new line under cursor and jump to it in EDIT mode
+* `shift + h` (highlight) - Start highlighting text. Press `shift + h` again or `ESC` to cancel highlighting
+* `shift + c` (copy) - Copy highlighted text
+* `shift + p` (paste) - Paste copied text at current cursor position
 #### Navigation
 * `b` (bottom) - jump to bottom of visual buffer (no scrolling)
 * `shift + b` (bottom) - jump to bottom of entire buffer (scrolling if needed)

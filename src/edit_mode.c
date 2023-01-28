@@ -206,3 +206,81 @@ void edit_write_key(
 		}
 	}
 }
+
+void edit_copy_buffer(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	size_t n_rows = 0;
+	if (cursor->row > cursor->highlight_row)
+		n_rows = cursor->row - cursor->highlight_row;
+	else
+		n_rows = cursor->highlight_row - cursor->row;
+	n_rows++;
+
+	char (*copy_buffer)[LINE_BUFF_SIZE] = calloc(n_rows, sizeof(*copy_buffer));
+
+	// TODO: need some type of error here incase the allocation fails
+
+	size_t start_row = min(cursor->row, cursor->highlight_row);
+	size_t start_column = min(cursor->column, cursor->highlight_column);
+
+	size_t end_row = max(cursor->row, cursor->highlight_row);
+	size_t end_column = max(cursor->column, cursor->highlight_column);
+
+	size_t copied_rows = 0;
+
+	// copy first row (need to handle the cursor position appropriately)
+	if (n_rows == 1)
+	{
+		for (size_t c = start_column; c <= end_column; ++c)
+			strncat(copy_buffer[copied_rows], &screen->lines[start_row][c], 1);
+	}
+	else
+	{
+		if (cursor->row > cursor->highlight_row)
+			for (size_t c = cursor->highlight_column; c < strlen(screen->lines[start_row]); ++c)
+				strncat(copy_buffer[copied_rows], &screen->lines[start_row][c], 1);
+		else
+			for (size_t c = cursor->column; c < strlen(screen->lines[start_row]); ++c)
+				strncat(copy_buffer[copied_rows], &screen->lines[start_row][c], 1);
+	}
+	copied_rows++;
+
+	// copy middle rows (entire lines)
+	for (size_t r = start_row + 1; r < end_row; ++r)
+		strncpy(copy_buffer[copied_rows++], screen->lines[r], strlen(screen->lines[r]));
+
+	// copy last row (need to handle the cursor position appropriately)
+	if (cursor->row > cursor->highlight_row)
+		for (size_t c = 0; c <= cursor->column; ++c)
+			strncat(copy_buffer[copied_rows], &screen->lines[end_row][c], 1);
+	else
+		for (size_t c = 0; c <= cursor->highlight_column; ++c)
+			strncat(copy_buffer[copied_rows], &screen->lines[end_row][c], 1);
+
+	free(screen->copy_buffer);
+	screen->copy_buffer = copy_buffer;
+	screen->copy_buffer_rows = n_rows;
+
+	cursor_toggle_highlight(cursor);
+	screen_draw(screen, cursor);
+}
+
+void edit_paste_buffer(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor)
+{
+	// on the first line, we insert the text wherever we are then insert new line
+	// for every subsequent line (if copy_buffer_rows > 1)
+	for (size_t line = 0; line < screen->copy_buffer_rows; ++line)
+	{
+		for (size_t c = 0; c < strlen(screen->copy_buffer[line]); ++c)
+			edit_write_key(screen, cursor, screen->copy_buffer[line][c]);
+
+		if (screen->copy_buffer_rows > 1)
+			edit_insert_new_line(screen, cursor, true);
+	}
+
+	screen_draw(screen, cursor);
+}

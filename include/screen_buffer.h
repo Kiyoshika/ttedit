@@ -10,6 +10,9 @@
 #include <math.h>
 #include <stdbool.h>
 
+#define min(a, b) a < b ? a : b
+#define max(a, b) a > b ? a : b
+
 #define LINE_BUFF_SIZE 256
 #define DOUBLE_LINE_BUFF_SIZE LINE_BUFF_SIZE * 2
 
@@ -33,6 +36,9 @@ struct screen_buffer_t
 	size_t end_idx;
 	// max rows visible on screen
 	size_t max_rows;
+	// a buffer that holds copied text (after selecting text and using copy command)
+	char (*copy_buffer)[LINE_BUFF_SIZE];
+	size_t copy_buffer_rows;
 };
 
 // pass a screen_buffer_t by address to initialise

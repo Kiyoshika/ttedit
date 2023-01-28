@@ -17,6 +17,13 @@ struct cursor_t
 	uint32_t column;
 	// total space the line numbers take up (will need to subtract this while writing to buffer)
 	uint16_t line_num_size;
+
+	// whether or not we're currently highlighting text
+	bool highlight_mode;
+	// the starting row when we started highlighting
+	uint32_t highlight_row;
+	// the starting column when we started highlighting
+	uint32_t highlight_column;
 };
 
 // pass a cursor_t by address
@@ -91,5 +98,9 @@ void cursor_jump_scope(
 		struct cursor_t* const cursor,
 		struct screen_buffer_t* const screen,
 		const char jump_char);
+
+// toggle cursor highlighting on/off when selecting text
+void cursor_toggle_highlight(
+		struct cursor_t* const cursor);
 
 #endif

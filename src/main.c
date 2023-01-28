@@ -76,6 +76,7 @@ int main(int argc, char* argv[])
 		init_pair(SCHEME_REGULAR, COLOR_WHITE, COLOR_BLACK);
 		init_pair(SCHEME_KEYWORD, COLOR_CYAN, COLOR_BLACK);
 		init_pair(SCHEME_LINE_NUMBER, COLOR_YELLOW, COLOR_BLACK);
+		init_pair(SCHEME_HIGHLIGHT, COLOR_BLACK, COLOR_WHITE);
 		// for now comment and quotes will have the same scheme,
 		// but eventually when we can let users customise them, they
 		// can change if wanted
@@ -116,6 +117,30 @@ int main(int argc, char* argv[])
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// COPY BUFFER
+			case 'C':
+				if (mode == VISUAL && cursor.highlight_mode)
+					edit_copy_buffer(&screen, &cursor);
+				else if (mode == EDIT)
+					goto writekey;
+				break;
+			// PASTE BUFFER
+			case 'P':
+				if (mode == VISUAL)
+					edit_paste_buffer(&screen, &cursor);
+				else
+					goto writekey;
+				break;
+			// HIGHLIGHT TEXT
+			case 'H':
+				if (mode == VISUAL)
+				{
+					cursor_toggle_highlight(&cursor);
+					screen_draw(&screen, &cursor);
+				}
+				else
+					goto writekey;
+				break;
 			// JUMP SCOPES
 			case 'J':
 				if (mode == VISUAL)
@@ -321,7 +346,14 @@ int main(int argc, char* argv[])
 					screen_draw(&screen, &cursor);
 				}
 				else if (mode == VISUAL)
+				{
 					command_clear(&command);
+					if (cursor.highlight_mode)
+					{
+						cursor_toggle_highlight(&cursor);
+						screen_draw(&screen, &cursor);
+					}
+				}
 				break;
 
 			// JUMP FORWARD A WORD
