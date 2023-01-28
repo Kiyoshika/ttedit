@@ -9,6 +9,7 @@ This project is still extremely young and pretty buggy, it's more so an experime
 * Writing past 255 characters on a line exhibits some odd behaviour - this case is not properly handled
 * There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
 * `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
+* Using `w` to jump words will break the cursor position if the line below current line is blank and you use `w` to wrap to the next line (see [this issue](https://github.com/Kiyoshika/ttedit/issues/33)
 
 ## Demo Video (as of 28 January 2023)
 https://user-images.githubusercontent.com/49159969/215283220-fbedd0f8-dd7c-4204-8eee-7c8d151197a0.mp4
