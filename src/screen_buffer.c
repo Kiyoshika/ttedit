@@ -59,6 +59,8 @@ int8_t screen_init(
 	screen->total_lines = 1;
 	if (!screen->lines)
 		return -1;
+	screen->copy_buffer = NULL;
+	screen->copy_buffer_rows = 0;
 	return 0;
 }
 

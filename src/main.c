@@ -117,6 +117,13 @@ int main(int argc, char* argv[])
 		int key_pressed = getch();
 		switch (key_pressed)
 		{
+			// COPY BUFFER
+			case 'c':
+				if (mode == VISUAL && cursor.highlight_mode)
+					edit_copy_buffer(&screen, &cursor);
+				else if (mode == EDIT)
+					goto writekey;
+				break;
 			// HIGHLIGHT TEXT
 			case 'H':
 				if (mode == VISUAL)
