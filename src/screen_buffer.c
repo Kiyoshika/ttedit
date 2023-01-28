@@ -271,9 +271,12 @@ void _highlight_text(
 		const struct screen_buffer_t* const screen,
 		const struct cursor_t* const cursor)
 {
+	// TODO: break these conditions into their own functions because this
+	// unexpectedly became very long
 	attron(COLOR_PAIR(SCHEME_HIGHLIGHT));
 
 	const size_t offset = cursor->line_num_size + 1;
+	const size_t row_offset = screen->end_idx - screen->max_rows;
 
 	// start first row relative to cursor
 	if (cursor->row == cursor->highlight_row)
@@ -293,67 +296,55 @@ void _highlight_text(
 		size_t start_row = cursor->highlight_row;
 		size_t end_row = cursor->row;
 
-		// have to do some offset math when choosing the row to handle
-		// scrolling properly.
-		//
-		// FORMULA: max_rows - (end_idx - desired_row)
-		// e.g.,: 50 - (75 - 64) = 50 - 11 = 39
-
-		// for first row, highlight from column to end of line
-		for (size_t c = cursor->highlight_column; c < strlen(screen->lines[start_row]); ++c)
-		{
-			size_t display_row;
-			if (screen->end_idx - start_row > screen->max_rows)
-				display_row = 0;
-			else
-				display_row = screen->max_rows - (screen->end_idx - start_row);
-
-			move(display_row, c + offset);
-			// TODO: fix this so the top line displays correct row while scrolling down
-			printw("%c", screen->lines[start_row][c]);
-		}
-
-		// for all rows in between highlight entire line
-		for (size_t r = start_row + 1; r < end_row; ++r)
-		{
-			move(screen->max_rows - (screen->end_idx - r), 0 + offset);
-			printw("%s", screen->lines[r]);
-		}
 		
-		// for last row, highlight from beginning of line to current cursor
-		for (size_t c = 0; c <= cursor->column; ++c)
+		// if highlight_row is within visible frame, then we highlight
+		// from the cursor to end of line for the first line, full lines in between,
+		// and up to highlight_cursor for last line
+		if (cursor->highlight_row >= screen->start_idx
+				&& cursor->highlight_row <= screen->end_idx)
 		{
-			move(screen->max_rows - (screen->end_idx - end_row), c + offset);
-			printw("%c", screen->lines[end_row][c]);
+			// first row
+			for (size_t c = cursor->highlight_column; c < strlen(screen->lines[cursor->highlight_row]); ++c)
+			{
+				move(cursor->highlight_row - row_offset, c + offset);
+				printw("%c", screen->lines[cursor->highlight_row][c]);
+			}
+
+			// in-between rows
+			for (size_t r = cursor->highlight_row + 1; r < cursor->row; ++r)
+			{
+				move(cursor->highlight_row + (r - cursor->highlight_row) - row_offset, 0 + offset);
+				printw("%s", screen->lines[r]);
+			}
+
+			// last row
+			for (size_t c = 0; c < cursor->column; ++c)
+			{
+				move(cursor->row - row_offset, c + offset);
+				printw("%c", screen->lines[cursor->row][c]);
+			}
+
 		}
+		// if highlight_row is OUTSIDE of visible frame, highlight everything up to cursor
+		else
+		{
+			for (size_t row = screen->start_idx; row < cursor->row; ++row)
+			{
+				move(row - screen->start_idx, 0 + offset);
+				printw("%s", screen->lines[row]);
+			}
+
+			for (size_t c = 0; c < cursor->column; ++c)
+			{
+				move(cursor->row - row_offset, c + offset);
+				printw("%c", screen->lines[cursor->row][c]);
+			}
+		}
+
 	}
 	else if (cursor->highlight_row > cursor->row)
 	{
-		size_t start_row = cursor->row;
-		size_t end_row = cursor->highlight_row;
-
-		// for last row, highlight from beginning of line to highlight cursor
-		// TODO: fix this so the bottom line displays correct row while scrolling up
-		for (size_t c = 0; c <= cursor->highlight_column; ++c)
-		{
-			move(screen->current_line + (end_row - start_row), c + offset);
-			printw("%c", screen->lines[end_row][c]);
-		}
-
-		// for all rows in between highlight entire line
-		for (size_t r = end_row; r --> start_row + 1;)
-		{
-			move(screen->current_line + (end_row - r), 0 + offset);
-			printw("%s", screen->lines[start_row + end_row - r]);
-		}
-
-		// for first row, highlight from cursor to end of line
-		for (size_t c = cursor->column; c < strlen(screen->lines[start_row]); ++c)
-		{
-			move(screen->current_line, c + offset);
-			printw("%c", screen->lines[start_row][c]);
-		}
-		
+		// TODO: finish this
 	}
 
 	refresh();
