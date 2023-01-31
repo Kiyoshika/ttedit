@@ -241,16 +241,15 @@ void cursor_jump_word_forward(
 			{
 				found_word = true;
 
-				// scroll screen by one line if needed
-				if (row > cursor->row)
-					screen->current_line++;
-
-				if (screen->current_line >= screen->max_rows - 1)
+				if (row - cursor->row >= screen->max_rows - screen->current_line - 2)
 				{
-					screen->start_idx++;
-					screen->end_idx++;
-					screen->current_line--;
+					// +/- 2 is accounting for bottom row + 1-indexed lines
+					screen->end_idx = row + 2;
+					screen->start_idx = screen->end_idx - screen->max_rows;
+					screen->current_line = screen->max_rows - 2;
 				}
+				else
+					screen->current_line += row - cursor->row;
 
 				cursor->row = row;
 				cursor->column = i;
@@ -293,20 +292,18 @@ void cursor_jump_word_backward(
 			{
 				found_word = true;
 
-				if (cursor->row > row && screen->current_line == 0)
+				if (cursor->row - row > screen->current_line)
 				{
-					screen->start_idx--;
-					screen->end_idx--;
-					//screen->current_line++;
+					screen->start_idx = row;
+					screen->end_idx = screen->start_idx + screen->max_rows;
+					screen->current_line = 0;
 				}
-
-				// scroll screen by one line if needed
-				if (cursor->row > row && screen->current_line > 0)
-					screen->current_line--;
-
+				else
+					screen->current_line -= cursor->row - row;
+				
 				cursor->row = row;
 				cursor->column = i;
-				
+
 				// special case if we're at beginning of buffer, force
 				// the cursor to position zero
 				if (i == 1)
