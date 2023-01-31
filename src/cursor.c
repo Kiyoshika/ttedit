@@ -241,20 +241,15 @@ void cursor_jump_word_forward(
 			{
 				found_word = true;
 
-				// scroll screen by one line if needed
-				size_t diff = 0;
-				if (row > cursor->row)
+				if (row - cursor->row >= screen->max_rows - screen->current_line - 2)
 				{
-					diff = row - cursor->row;
-					screen->current_line += diff;
+					// +/- 2 is accounting for bottom row + 1-indexed lines
+					screen->end_idx = row + 2;
+					screen->start_idx = screen->end_idx - screen->max_rows;
+					screen->current_line = screen->max_rows - 2;
 				}
-
-				if (screen->current_line >= screen->max_rows - 1)
-				{
-					screen->start_idx += diff;
-					screen->end_idx += diff;
-					screen->current_line -= diff;
-				}
+				else
+					screen->current_line += row - cursor->row;
 
 				cursor->row = row;
 				cursor->column = i;
@@ -297,19 +292,15 @@ void cursor_jump_word_backward(
 			{
 				found_word = true;
 
-				size_t diff = 0;
-				if (cursor->row > row)
-					diff = cursor->row - row;
-
-				if (diff > screen->current_line)
+				if (cursor->row - row > screen->current_line)
 				{
-					screen->current_line = screen->end_idx - (screen->end_idx - row);
-					screen->start_idx -= diff;
-					screen->end_idx -= diff;
+					screen->start_idx = row;
+					screen->end_idx = screen->start_idx + screen->max_rows;
+					screen->current_line = 0;
 				}
 				else
-					screen->current_line -= diff;
-
+					screen->current_line -= cursor->row - row;
+				
 				cursor->row = row;
 				cursor->column = i;
 
