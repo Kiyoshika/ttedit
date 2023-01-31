@@ -141,13 +141,12 @@ void cursor_jump_bottom(
 		struct screen_buffer_t* const screen)
 {
 	cursor->row = screen->max_occupied_line - 1;
-	if (cursor->row > screen->max_rows)
+	if (cursor->row + 1 >= screen->max_rows) // +1 because max_rows is 1-indexed
 	{
-		cursor->row += 2;
-		screen->end_idx = cursor->row;
+		screen->end_idx = cursor->row + 2; // +2 to account for bottom line that displays info
 		screen->start_idx = screen->end_idx - screen->max_rows;
 	}
-	screen->current_line = cursor->row > screen->max_rows ? screen->max_rows : cursor->row;
+	screen->current_line = cursor->row + 1 >= screen->max_rows ? screen->max_rows - 2 : cursor->row;
 	cursor->column = cursor->column > strlen(screen->lines[cursor->row]) ? strlen(screen->lines[cursor->row]) : cursor->column;
 	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
 	refresh();
