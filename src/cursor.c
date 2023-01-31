@@ -184,6 +184,10 @@ void cursor_jump_line(
 		struct screen_buffer_t* const screen,
 		const uint32_t line_num)
 {
+	// cannot jump below line 1
+	if (line_num == 0)
+		return;
+
 	// this portion is if the jump is within the visible screen buffer
 	// OR if jumping to a cursor position ABOVE the visible screen buffer
 	// which will make the jumped line the top of the buffer (scrolling up)
