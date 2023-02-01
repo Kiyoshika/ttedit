@@ -573,6 +573,31 @@ bool screen_read_file(
 			if (current_buffer[strlen(current_buffer)-1] == '\n')
 				current_buffer[strlen(current_buffer)-1] = '\0';
 
+			// replace tabs with four spaces
+			size_t len = strlen(current_buffer);
+			char buff[LINE_BUFF_SIZE] = {0};
+			size_t offset = 0;
+			for (size_t i = 0; i < len; ++i)
+			{
+				if (current_buffer[i] == '\t')
+				{
+					strncat(buff, current_buffer + offset, i - offset);
+					strncat(buff, "    ", 5);
+					offset = i + 1;
+				}
+				else
+				{
+					strncat(buff, current_buffer + offset, 1);
+					offset++;
+				}
+			}
+
+			if (strlen(buff) > 0)
+			{
+				memset(current_buffer, 0, LINE_BUFF_SIZE);
+				memcpy(current_buffer, buff, LINE_BUFF_SIZE);
+			}
+
 			memcpy(
 					screen->lines[current_line++], 
 					current_buffer, 

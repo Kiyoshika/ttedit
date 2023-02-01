@@ -4,7 +4,6 @@ This is a dummy project greatly inspired by vi(m) to help me learn the `ncurses`
 This project is still extremely young and pretty buggy, it's more so an experiment rather than to serve as full-fledged software (vim already exists, afterall).
 
 ## KNOWN ISSUES
-* Currently `ttedit` cannot render tabs (`\t`) correctly. So if you open a file with `ttedit` that was written with another editor (like vim), it will be very awkward to use.
 * Writing past 255 characters on a line exhibits some odd behaviour - this case is not properly handled
 * There is no wrapping if writing past the width of your terminal - technically the line is still written correctly but visually is akward
 * `ttedit` does not currently support dynamically resizing your terminal window, so zooming in/out will break the rendering
