@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <signal.h>
 #include "color_schemes.h"
-#include "window.h"
 #include "cursor.h"
 #include "screen_buffer.h"
 #include "edit_mode.h"
@@ -12,43 +11,10 @@
 #define KEY_ESCAPE 27
 #define KEY_TAB 9
 
-enum mode_e
-{
-	VISUAL,
-	EDIT
-};
-
 void INThandler(int sig)
 {
 	signal(sig, SIG_IGN);
 	// do nothing (prevent user closing with Ctrl+C)
-}
-
-static void draw_bottom(
-		const enum mode_e mode,
-		const struct screen_buffer_t* const screen,
-		const struct window_t* const window,
-		const struct cursor_t* const cursor)
-{
-	// clear buffer before writing
-	move(window->rows - 1, 0);
-	clrtoeol();
-
-	// since we already moved the cursor, we can use regular printw
-	switch (mode)
-	{
-		case VISUAL:
-			printw("MODE: VISUAL");
-			break;
-		case EDIT:
-			printw("MODE: EDIT");
-			break;
-	}
-
-	// restore original cursor position
-	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
-
-	refresh();
 }
 
 int main(int argc, char* argv[])
@@ -89,11 +55,8 @@ int main(int argc, char* argv[])
 	struct cursor_t cursor;
 	cursor_init(&cursor);
 
-	struct window_t window;
-	window_init(&window);
-
 	struct screen_buffer_t screen;
-	screen_init(&screen, &window);
+	screen_init(&screen);
 	
 	struct command_buffer_t command;
 	command_init(&command);
@@ -108,9 +71,7 @@ int main(int argc, char* argv[])
 	screen_draw(&screen, &cursor);
 
 
-	enum mode_e mode = VISUAL;
-
-	draw_bottom(mode, &screen, &window, &cursor);
+	screen_draw_bottom(&screen, &cursor, &command);
 
 	while(1)
 	{
@@ -119,21 +80,21 @@ int main(int argc, char* argv[])
 		{
 			// COPY BUFFER
 			case 'C':
-				if (mode == VISUAL && cursor.highlight_mode)
+				if (screen.mode == VISUAL && cursor.highlight_mode)
 					edit_copy_buffer(&screen, &cursor);
-				else if (mode == EDIT)
+				else if (screen.mode == EDIT)
 					goto writekey;
 				break;
 			// PASTE BUFFER
 			case 'P':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					edit_paste_buffer(&screen, &cursor);
 				else
 					goto writekey;
 				break;
 			// HIGHLIGHT TEXT
 			case 'H':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					cursor_toggle_highlight(&cursor);
 					screen_draw(&screen, &cursor);
@@ -143,14 +104,14 @@ int main(int argc, char* argv[])
 				break;
 			// JUMP SCOPES
 			case 'J':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_jump_scope(&cursor, &screen, screen.lines[cursor.row][cursor.column]);
 				else
 					goto writekey;
 				break;
 			// WRITE CONTENTS TO FILE
 			case 's':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					if (!screen_write_to_file(&screen, filename))
 					{
@@ -167,7 +128,7 @@ int main(int argc, char* argv[])
 
 			// QUIT FILE
 			case 'q':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					screen_free(&screen);
 					endwin();
@@ -179,10 +140,10 @@ int main(int argc, char* argv[])
 
 			// SWITCH TO EDIT MODE
 			case 'i':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
-					mode = EDIT;
-					draw_bottom(mode, &screen, &window, &cursor);
+					screen.mode = EDIT;
+					screen_draw_bottom(&screen, &cursor, &command);
 					screen_draw(&screen, &cursor);
 				}
 				else
@@ -191,7 +152,7 @@ int main(int argc, char* argv[])
 
 			// MOVE CURSOR LEFT
 			case 'h':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_move_left(&cursor, &screen);
 				else
 					goto writekey;
@@ -199,7 +160,7 @@ int main(int argc, char* argv[])
 
 			// MOVE CURSOR RIGHT
 			case 'l':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_move_right(&cursor, &screen);
 				else
 					goto writekey;
@@ -207,7 +168,7 @@ int main(int argc, char* argv[])
 
 			// MOVE CURSOR UP
 			case 'k':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_move_up(&cursor, &screen);
 				else
 					goto writekey;
@@ -215,15 +176,16 @@ int main(int argc, char* argv[])
 
 			// MOVE CURSOR DOWN
 			// OR TRIGGER JUMP COMMAND (if buffer is non-empty)
-			// TODO: add the cursor_char (last argument) later (which will be used for scope jumping)
-			// for now just using a placeholder space character
 			case 'j':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					if (strlen(command.buffer) == 0)
 						cursor_move_down(&cursor, &screen);
 					else
+					{
 						command_execute(&command, &cursor, &screen, 'j', ' ');
+						screen_draw_bottom(&screen, &cursor, &command);
+					}
 				}
 				else
 					goto writekey;
@@ -232,11 +194,11 @@ int main(int argc, char* argv[])
 			// PREPEND LINE
 			// (jump to first non-space character in buffer and toggle EDIT mode)
 			case 'p':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					cursor_prepend_line(&cursor, &screen);
-					mode = EDIT;
-					draw_bottom(mode, &screen, &window, &cursor);
+					screen.mode = EDIT;
+					screen_draw_bottom(&screen, &cursor, &command);
 				}
 				else
 					goto writekey;
@@ -245,11 +207,11 @@ int main(int argc, char* argv[])
 			// APPEND LINE
 			// (jump to end of buffer and toggle EDIT mode)
 			case 'a':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					cursor_append_line(&cursor, &screen);
-					mode = EDIT;
-					draw_bottom(mode, &screen, &window, &cursor);
+					screen.mode = EDIT;
+					screen_draw_bottom(&screen, &cursor, &command);
 				}
 				else
 					goto writekey;
@@ -257,12 +219,12 @@ int main(int argc, char* argv[])
 
 			// ADD NEW LINE UNDER CURSOR AND JUMP TO IT
 			case 'n':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					edit_insert_new_line(&screen, &cursor, false);
 					screen_draw(&screen, &cursor);
-					mode = EDIT;
-					draw_bottom(mode, &screen, &window, &cursor);
+					screen.mode = EDIT;
+					screen_draw_bottom(&screen, &cursor, &command);
 				}
 				else
 					goto writekey;
@@ -270,7 +232,7 @@ int main(int argc, char* argv[])
 
 			// DELETE CURRENT LINE AND JUMP UP A LINE
 			case 'd':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					edit_delete_current_line(&screen, &cursor);
 					screen_draw(&screen, &cursor);
@@ -281,7 +243,7 @@ int main(int argc, char* argv[])
 
 			// JUMP TO BOTTOM OF VISUAL BUFFER (no scrolling)
 			case 'b':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_jump_visual_bottom(&cursor, &screen);
 				else
 					goto writekey;
@@ -289,7 +251,7 @@ int main(int argc, char* argv[])
 
 			// JUMP TO BOTTOM OF ENTIRE BUFFER (scrolling if needed)
 			case 'B':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_jump_bottom(&cursor, &screen);
 				else
 					goto writekey;
@@ -297,7 +259,7 @@ int main(int argc, char* argv[])
 
 			// JUMP TO TOP OF VISUAL BUFFER (no scrolling)
 			case 't':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_jump_visual_top(&cursor, &screen);
 				else
 					goto writekey;
@@ -305,7 +267,7 @@ int main(int argc, char* argv[])
 
 			// JUMP TO TOP OF ENTIRE BUFFER (scrolling if needed)
 			case 'T':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 					cursor_jump_top(&cursor, &screen);
 				else
 					goto writekey;
@@ -321,15 +283,18 @@ int main(int argc, char* argv[])
 			case '7':
 			case '8':
 			case '9':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
+				{
 					command_append(&command, key_pressed);
+					screen_draw_bottom(&screen, &cursor, &command);
+				}
 				else
 					goto writekey;
 				break;
 
 			// INSERT TAB (4 spaces)
 			case KEY_TAB:
-				if (mode == EDIT)
+				if (screen.mode == EDIT)
 				{
 					for (size_t i = 0; i < 4; ++i)
 						edit_write_key(&screen, &cursor, ' ');
@@ -339,13 +304,13 @@ int main(int argc, char* argv[])
 
 			// SWITCH TO VISUAL MODE
 			case KEY_ESCAPE: // technically this code is also for ALT
-				if (mode == EDIT)
+				if (screen.mode == EDIT)
 				{
-					mode = VISUAL;
-					draw_bottom(mode, &screen, &window, &cursor);
+					screen.mode = VISUAL;
+					screen_draw_bottom(&screen, &cursor, &command);
 					screen_draw(&screen, &cursor);
 				}
-				else if (mode == VISUAL)
+				else if (screen.mode == VISUAL)
 				{
 					command_clear(&command);
 					if (cursor.highlight_mode)
@@ -353,12 +318,13 @@ int main(int argc, char* argv[])
 						cursor_toggle_highlight(&cursor);
 						screen_draw(&screen, &cursor);
 					}
+					screen_draw_bottom(&screen, &cursor, &command);
 				}
 				break;
 
 			// JUMP FORWARD A WORD
 			case 'w':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					cursor_jump_word_forward(&cursor, &screen);
 					screen_draw(&screen, &cursor);
@@ -369,7 +335,7 @@ int main(int argc, char* argv[])
 
 			// JUMP BACKWARD A WORD
 			case 'W':
-				if (mode == VISUAL)
+				if (screen.mode == VISUAL)
 				{
 					cursor_jump_word_backward(&cursor, &screen);
 					screen_draw(&screen, &cursor);
@@ -381,7 +347,7 @@ int main(int argc, char* argv[])
 			writekey:
 			default:
 				// WRITE TO BUFFER IN EDIT MODE
-				if (mode == EDIT)
+				if (screen.mode == EDIT)
 				{
 					edit_write_key(&screen, &cursor, key_pressed);
 					screen_draw(&screen, &cursor);
