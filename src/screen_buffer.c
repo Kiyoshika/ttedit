@@ -1,7 +1,7 @@
 #include "screen_buffer.h"
-#include "window.h"
 #include "cursor.h"
 #include "color_schemes.h"
+#include "command_buffer.h"
 
 // NOTE: keep this list sorted so we can perform a bsearch()
 // for better performance
@@ -47,12 +47,12 @@ static char KEYWORD_LIST[N_KEYWORDS][MAX_KEYWORD_LEN] = {
 };
 
 int8_t screen_init(
-		struct screen_buffer_t* const screen,
-		const struct window_t* const window)
+		struct screen_buffer_t* const screen)
 {
+	getmaxyx(stdscr, screen->max_rows, screen->max_columns);
+	screen->end_idx = screen->max_rows;
+	screen->mode = VISUAL;
 	screen->start_idx = 0;
-	screen->end_idx = window->rows;
-	screen->max_rows = window->rows;
 	screen->current_line = 0;
 	screen->lines = calloc(1, sizeof(*screen->lines));
 	screen->max_occupied_line = 1;
@@ -62,6 +62,35 @@ int8_t screen_init(
 	screen->copy_buffer = NULL;
 	screen->copy_buffer_rows = 0;
 	return 0;
+}
+
+void screen_draw_bottom(
+		struct screen_buffer_t* const screen,
+		struct cursor_t* const cursor,
+		struct command_buffer_t* const command_buffer)
+{
+	// clear buffer before writing
+	move(screen->max_rows - 1, 0);
+	clrtoeol();
+
+	// since we already moved the cursor, we can use regular printw
+	switch (screen->mode)
+	{
+		case VISUAL:
+			printw("MODE: VISUAL");
+			break;
+		case EDIT:
+			printw("MODE: EDIT");
+			break;
+	}
+
+	move(screen->max_rows - 1, screen->max_columns / 2);
+	printw("COMMAND: %s", command_buffer->buffer);
+
+	// restore original cursor position
+	move(screen->current_line, cursor->column + cursor->line_num_size + 1);
+
+	refresh();
 }
 
 // tokenise a particular string [token_str] compared

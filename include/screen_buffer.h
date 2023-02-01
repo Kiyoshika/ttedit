@@ -17,25 +17,42 @@
 #define DOUBLE_LINE_BUFF_SIZE LINE_BUFF_SIZE * 2
 
 // forward declarations
-struct window_t;
 struct cursor_t;
+struct command_buffer_t;
+
+enum screen_mode_e
+{
+	VISUAL,
+	EDIT
+};
 
 struct screen_buffer_t
 {
+	// current mode we're in (VISUAL or EDIT)
+	enum screen_mode_e mode;
+
 	// all lines in the buffer (e.g., entire source file)
 	char (*lines)[LINE_BUFF_SIZE];
 	size_t total_lines;
+
 	// the largest (occupied) line meaning the latest line with content.
 	// this is used for locking the cursor to prevent moving past our buffer
 	size_t max_occupied_line;
 	// current line index on the screen buffer (values between start_idx & end_idx)
 	size_t current_line;
+
 	// start index of which lines to display
 	size_t start_idx;
+
 	// end index of which lines to display (NOTE: end_idx - start_idx = max_rows)
 	size_t end_idx;
+
 	// max rows visible on screen
 	size_t max_rows;
+
+	// max columns visible on screen
+	size_t max_columns;
+
 	// a buffer that holds copied text (after selecting text and using copy command)
 	char (*copy_buffer)[LINE_BUFF_SIZE];
 	size_t copy_buffer_rows;
@@ -44,8 +61,14 @@ struct screen_buffer_t
 // pass a screen_buffer_t by address to initialise
 // its contents.
 int8_t screen_init(
+		struct screen_buffer_t* const screen);
+
+// draw bottom of screen buffer containing information such as
+// current mode, command buffer, etc.
+void screen_draw_bottom(
 		struct screen_buffer_t* const screen,
-		const struct window_t* const window);
+		struct cursor_t* const cursor,
+		struct command_buffer_t* const command_buffer);
 
 // draw the screen buffer by writing the lines
 // from start_idx to end_idx
