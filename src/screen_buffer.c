@@ -23,10 +23,10 @@ static char KEYWORD_LIST[N_KEYWORDS][MAX_KEYWORD_LEN] = {
 	"goto",
 	"if",
 	"int",
-	"int8_t",
 	"int16_t",
 	"int32_t",
 	"int64_t",
+	"int8_t",
 	"long",
 	"register",
 	"return",
@@ -36,10 +36,10 @@ static char KEYWORD_LIST[N_KEYWORDS][MAX_KEYWORD_LEN] = {
 	"static",
 	"struct",
 	"switch",
-	"uint8_t",
 	"uint16_t",
 	"uint32_t",
 	"uint64_t",
+	"uint8_t",
 	"union",
 	"void",
 	"volatile",
@@ -165,7 +165,7 @@ void _tokenize_line(
 				&i);
 
 		// always tokenise on spaces and punctuation (except for some special cases)
-		if (line[i] == ' ' || 
+		if (line[i] == ' ' ||
 				(ispunct(line[i]) && line[i] != '_' && line[i] != '#'))
 		{
 			// only write a null terminator at beginning if we
@@ -295,7 +295,14 @@ static void screen_print_line(
 	// special case where we haven't written a full token yet
 	// (without this, the first text you write doesn't render)
 	if (n_tokens == 0)
-		printw("%s", tokens);
+	{
+		screen_print_token(
+			tokens, 
+			inside_single_comment, 
+			inside_multi_comment,
+			inside_single_quote,
+			inside_double_quote);
+	}
 }
 
 void _highlight_single_line(
